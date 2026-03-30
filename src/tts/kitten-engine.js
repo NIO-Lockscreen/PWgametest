@@ -37,11 +37,12 @@ async function loadModel(onProgress) {
     try {
       onProgress?.('Loading ONNX Runtime...');
       ort = await import('onnxruntime-web');
-      // Point WASM to jsDelivr CDN (avoids bundling the 22MB .wasm file)
-      ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
+      // Let onnxruntime-web resolve WASM from the Vite bundle (same-origin)
+      // Disable multi-threading to avoid SharedArrayBuffer/COOP/COEP issues
+      ort.env.wasm.numThreads = 1;
 
       onProgress?.('Downloading KittenTTS model (~25MB)...');
-      // Fetch model from HuggingFace (avoids bundling the 23MB .onnx file)
+      // Fetch model from HuggingFace (avoids bundling the 23MB .onnx in the repo)
       const modelUrl = 'https://huggingface.co/onnx-community/KittenTTS-Nano-v0.8-ONNX/resolve/main/model_quantized.onnx';
       const modelResponse = await cachedFetch(modelUrl);
       const modelBuffer = await modelResponse.arrayBuffer();
