@@ -12,14 +12,14 @@ const SAMPLE_RATE = 24000;
 
 // Voice IDs as stored in voices.json
 const VOICE_IDS = {
-  Bella:  'expr-voice-1-f',
-  Jasper: 'expr-voice-1-m',
-  Luna:   'expr-voice-2-f',
-  Bruno:  'expr-voice-2-m',
-  Rosie:  'expr-voice-3-f',
-  Hugo:   'expr-voice-3-m',
-  Kiki:   'expr-voice-4-f',
-  Leo:    'expr-voice-4-m',
+  Bella:  'expr-voice-2-f',
+  Jasper: 'expr-voice-2-m',
+  Luna:   'expr-voice-3-f',
+  Bruno:  'expr-voice-3-m',
+  Rosie:  'expr-voice-4-f',
+  Hugo:   'expr-voice-4-m',
+  Kiki:   'expr-voice-5-f',
+  Leo:    'expr-voice-5-m',
 };
 
 let ort = null;
