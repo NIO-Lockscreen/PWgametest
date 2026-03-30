@@ -43,7 +43,7 @@ async function loadModel(onProgress) {
 
       onProgress?.('Downloading KittenTTS model (~25MB)...');
       // Fetch model from HuggingFace (avoids bundling the 23MB .onnx in the repo)
-      const modelUrl = 'https://huggingface.co/onnx-community/KittenTTS-Nano-v0.8-ONNX/resolve/main/model_quantized.onnx';
+      const modelUrl = 'https://huggingface.co/onnx-community/KittenTTS-Nano-v0.8-ONNX/resolve/main/onnx/model.onnx';
       const modelResponse = await cachedFetch(modelUrl);
       const modelBuffer = await modelResponse.arrayBuffer();
 
