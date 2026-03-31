@@ -122,26 +122,17 @@ async function generateAudio(text, voiceId, speed = 1.0) {
   });
 
   // Output tensor is called 'waveform'
+  // NOTE: speed is already handled by the model's speed tensor — do NOT resample here
   let audioData = new Float32Array(results.waveform.data);
 
-  // Apply speed adjustment via resampling
-  if (speed !== 1.0) {
-    const newLen = Math.floor(audioData.length / speed);
-    const resampled = new Float32Array(newLen);
-    for (let i = 0; i < newLen; i++) {
-      resampled[i] = audioData[Math.min(Math.floor(i * speed), audioData.length - 1)];
-    }
-    audioData = resampled;
-  }
-
-  // Clean NaN and normalize
+  // Clean NaN and normalize to a reasonable peak level
   let maxAmp = 0;
   for (let i = 0; i < audioData.length; i++) {
     if (isNaN(audioData[i])) audioData[i] = 0;
     else maxAmp = Math.max(maxAmp, Math.abs(audioData[i]));
   }
-  if (maxAmp > 0 && maxAmp < 0.1) {
-    const norm = 0.5 / maxAmp;
+  if (maxAmp > 0) {
+    const norm = 0.9 / maxAmp;
     for (let i = 0; i < audioData.length; i++) audioData[i] *= norm;
   }
 
