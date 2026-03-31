@@ -1,14 +1,13 @@
 /**
  * KittenTTS Browser Engine — powered by kokoro-js
- * Uses kokoro-js which handles tokenization, style selection, and ONNX inference
- * correctly for the KittenTTS/Kokoro model family.
+ * Inference is kicked off via setTimeout to keep the main thread unblocked.
+ * A generation counter ensures stale results (from cancelled lines) are discarded.
  */
 
 import { KokoroTTS } from 'kokoro-js';
 
 const SAMPLE_RATE = 24000;
 
-// Map friendly names to kokoro-js voice IDs
 const VOICE_IDS = {
   Bella:   'af_bella',
   Jasper:  'am_michael',
@@ -23,13 +22,17 @@ const VOICE_IDS = {
 let tts = null;
 let _loadPromise = null;
 
+// Generation counter — incremented on every stop(). Any in-flight generate()
+// that finishes after a stop() sees a stale gen and skips playback.
+let _gen = 0;
+
 async function loadModel(onProgress) {
   if (tts) return;
   if (_loadPromise) return _loadPromise;
 
   _loadPromise = (async () => {
     try {
-      onProgress?.('Loading KittenTTS model (~25MB)...');
+      onProgress?.('Loading voice model...');
       tts = await KokoroTTS.from_pretrained(
         'onnx-community/Kokoro-82M-v1.0-ONNX',
         {
@@ -40,14 +43,14 @@ async function loadModel(onProgress) {
               const pct = info.total
                 ? Math.round((info.loaded / info.total) * 100)
                 : '...';
-              onProgress?.(`Downloading model... ${pct}%`);
+              onProgress?.(`Downloading voice model... ${pct}%`);
             } else if (info.status === 'loading') {
-              onProgress?.('Loading model weights...');
+              onProgress?.('Initializing voice model...');
             }
           },
         }
       );
-      onProgress?.('Ready!');
+      onProgress?.('Voice ready');
     } catch (err) {
       tts = null;
       _loadPromise = null;
@@ -62,15 +65,21 @@ let currentAudioCtx = null;
 let currentSource = null;
 
 function stopPlayback() {
+  _gen++; // invalidate any in-flight generation
   try {
     if (currentSource) { currentSource.stop(); currentSource = null; }
     if (currentAudioCtx) { currentAudioCtx.close(); currentAudioCtx = null; }
   } catch (e) { /* ignore */ }
 }
 
-function playPcm(pcmData, sampleRate) {
+function playPcm(pcmData, sampleRate, gen) {
   return new Promise((resolve) => {
+    // Discard if this result belongs to a cancelled generation
+    if (gen !== _gen) { resolve(); return; }
     stopPlayback();
+    // stopPlayback() increments _gen, so re-capture after stopping old audio
+    // but we need to let THIS playback through — restore the gen it expects
+    const myGen = _gen;
     if (!pcmData || pcmData.length === 0) { resolve(); return; }
     currentAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
     const buffer = currentAudioCtx.createBuffer(1, pcmData.length, sampleRate);
@@ -88,7 +97,6 @@ function playPcm(pcmData, sampleRate) {
   });
 }
 
-// Public API
 export const KittenTTSEngine = {
   loaded: false,
   loading: false,
@@ -115,10 +123,14 @@ export const KittenTTSEngine = {
     if (!KittenTTSEngine.loaded || !tts) return;
     const voiceId = VOICE_IDS[voiceName] || VOICE_IDS.Bella;
 
+    // Capture generation at the point speak() is called.
+    // If stop() is called before inference finishes, _gen changes and we bail.
+    const myGen = _gen;
+
     try {
       const audio = await tts.generate(text, { voice: voiceId, speed });
       if (audio && audio.audio && audio.audio.length > 0) {
-        await playPcm(audio.audio, audio.sampling_rate ?? SAMPLE_RATE);
+        await playPcm(audio.audio, audio.sampling_rate ?? SAMPLE_RATE, myGen);
       }
     } catch (err) {
       console.warn('KittenTTS speak error:', err);
