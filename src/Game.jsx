@@ -119,7 +119,7 @@ const AudioEngine = (() => {
 })();
 
 /* ═══════════════════════════════════════════
-   TTS — import from KittenTTS voice manager
+   TTS — Web Speech API voice manager
    ═══════════════════════════════════════════ */
 import { VoiceManager } from './tts/voice-manager.js';
 
@@ -127,189 +127,499 @@ import { VoiceManager } from './tts/voice-manager.js';
    PORTRAITS — larger viewBox, more detail
    ═══════════════════════════════════════════ */
 const P = {
-  WRIGHT: (ex="normal") => (
+  WRIGHT: (ex="normal") => {
+    const isSuit = true;
+    return (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
-      {/* Body - blue suit */}
-      <rect x="20" y="180" width="160" height="120" rx="12" fill="#2d5a9e" />
-      <rect x="60" y="170" width="80" height="25" rx="6" fill="#e8c89e" />
-      {/* White collar */}
-      <polygon points="70,190 100,215 130,190" fill="#fff" />
-      {/* Red tie */}
-      <polygon points="94,195 106,195 104,255 96,255" fill="#c0392b" />
+      <defs>
+        <linearGradient id="wr-s" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3568b2"/><stop offset="100%" stopColor="#1e3a6e"/></linearGradient>
+        <linearGradient id="wr-h" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3a2418"/><stop offset="100%" stopColor="#1a0e08"/></linearGradient>
+        <linearGradient id="wr-sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f5d4b0"/><stop offset="100%" stopColor="#e0b48a"/></linearGradient>
+      </defs>
+      {/* Suit body */}
+      <path d="M28,195 Q30,182 60,176 L88,174 L112,174 L140,176 Q170,182 172,195 L172,300 L28,300Z" fill="url(#wr-s)"/>
+      <path d="M80,176 L100,195 L120,176" fill="#1a3260" opacity="0.6"/>
+      <path d="M60,195 Q65,240 62,300" stroke="#1a3260" strokeWidth="1.5" fill="none" opacity="0.4"/>
+      <path d="M140,195 Q135,240 138,300" stroke="#1a3260" strokeWidth="1.5" fill="none" opacity="0.4"/>
+      <path d="M80,176 L72,195 L82,210 L100,200Z" fill="#294f8a"/>
+      <path d="M120,176 L128,195 L118,210 L100,200Z" fill="#294f8a"/>
+      <path d="M88,176 L100,200 L112,176Z" fill="#f0ece6"/>
+      <path d="M96,186 L104,186 L103,192 L100,194 L97,192Z" fill="#d4352e"/>
+      <path d="M97,192 L103,192 L101,240 L100,244 L99,240Z" fill="#c0392b"/>
+      <path d="M98,192 L102,192 L100,200Z" fill="#a52f25"/>
+      <circle cx="100" cy="220" r="2.5" fill="#4a7ac7" opacity="0.6"/>
+      <circle cx="68" cy="200" r="9" fill="#f1c40f"/><circle cx="68" cy="200" r="7" fill="#e8b84a"/>
+      <text x="68" y="204" textAnchor="middle" fontSize="9" fill="#8b6914" fontWeight="bold">A</text>
+      <circle cx="68" cy="200" r="9" fill="none" stroke="#c9a80e" strokeWidth="1.5"/>
+      {/* Pointing arm for objection */}
+      {ex==="objection" && <>
+        <path d="M145,180 Q155,170 162,155 L170,136 L180,118" stroke="#e0b48a" strokeWidth="14" fill="none" strokeLinecap="round"/>
+        <path d="M180,118 L196,104" stroke="#f0c8a0" strokeWidth="6" fill="none" strokeLinecap="round"/>
+        <path d="M178,122 L182,128" stroke="#f0c8a0" strokeWidth="4" fill="none" strokeLinecap="round"/>
+        <path d="M175,124 L176,132" stroke="#f0c8a0" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      </>}
+      {ex==="thinking" && <>
+        <path d="M140,200 Q142,185 138,170 L130,156 L120,148" stroke="#e0b48a" strokeWidth="12" fill="none" strokeLinecap="round"/>
+        <ellipse cx="118" cy="146" rx="8" ry="6" fill="#f0c8a0" transform="rotate(-20 118 146)"/>
+      </>}
+      {/* Neck */}
+      <path d="M86,152 Q86,174 88,176 L112,176 Q114,174 114,152Z" fill="url(#wr-sk)"/>
+      <path d="M92,168 Q100,172 108,168" stroke="#d4a070" strokeWidth="0.8" fill="none" opacity="0.4"/>
       {/* Head */}
-      <ellipse cx="100" cy="110" rx="46" ry="55" fill="#f0c8a0" />
+      <path d="M56,108 Q54,78 66,58 Q78,42 100,40 Q122,42 134,58 Q146,78 144,108 L142,130 Q138,148 128,156 Q116,164 100,166 Q84,164 72,156 Q62,148 58,130Z" fill="url(#wr-sk)"/>
+      <path d="M62,140 Q72,155 100,162 Q128,155 138,140 L142,130 Q138,148 128,156 Q116,164 100,166 Q84,164 72,156 Q62,148 58,130Z" fill="#d4a070" opacity="0.25"/>
+      {/* Ears */}
+      <ellipse cx="55" cy="104" rx="7" ry="12" fill="#ecc8a2"/>
+      <path d="M53,98 Q50,104 53,110" stroke="#d4a070" strokeWidth="1.2" fill="none"/>
+      <ellipse cx="145" cy="104" rx="7" ry="12" fill="#ecc8a2"/>
+      <path d="M147,98 Q150,104 147,110" stroke="#d4a070" strokeWidth="1.2" fill="none"/>
       {/* Spiky hair */}
-      <path d="M54,95 L62,30 L78,82 L90,22 L100,75 L112,25 L122,82 L135,32 L142,85 L148,95" fill="#2c1810" />
-      <ellipse cx="100" cy="68" rx="46" ry="30" fill="#2c1810" />
-      {/* Eyes */}
-      {ex === "objection" ? (<>
-        <ellipse cx="80" cy="108" rx="10" ry="9" fill="#fff" /><ellipse cx="120" cy="108" rx="10" ry="9" fill="#fff" />
-        <circle cx="80" cy="108" r="5" fill="#1a1a1a" /><circle cx="120" cy="108" r="5" fill="#1a1a1a" />
-        <line x1="66" y1="92" x2="90" y2="96" stroke="#2c1810" strokeWidth="4" strokeLinecap="round" />
-        <line x1="110" y1="96" x2="134" y2="92" stroke="#2c1810" strokeWidth="4" strokeLinecap="round" />
-        <ellipse cx="100" cy="138" rx="14" ry="9" fill="#c0392b" />
-      </>) : ex === "thinking" ? (<>
-        <ellipse cx="80" cy="110" rx="8" ry="7" fill="#fff" /><ellipse cx="120" cy="110" rx="8" ry="7" fill="#fff" />
-        <circle cx="83" cy="110" r="4" fill="#1a1a1a" /><circle cx="123" cy="110" r="4" fill="#1a1a1a" />
-        <line x1="68" y1="96" x2="90" y2="100" stroke="#2c1810" strokeWidth="3.5" />
-        <line x1="110" y1="100" x2="132" y2="96" stroke="#2c1810" strokeWidth="3.5" />
-        <path d="M85,135 Q100,142 115,135" stroke="#8b5e3c" strokeWidth="3" fill="none" />
+      <path d="M52,98 L46,48 L64,82 L54,22 L78,68 L72,10 L96,58 L90,6 L108,52 L106,8 L124,62 L120,16 L136,70 L138,28 L148,82 L152,46 L150,100" fill="url(#wr-h)"/>
+      <ellipse cx="100" cy="64" rx="48" ry="30" fill="#2c1810"/>
+      <path d="M66,55 Q82,44 100,48 Q118,44 134,55" stroke="#4a3020" strokeWidth="2.5" fill="none" opacity="0.5"/>
+      {/* Nose */}
+      <path d="M97,112 Q99,122 96,125" stroke="#d4a070" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+      <path d="M103,112 Q101,122 104,125" stroke="#d4a070" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+      {/* Expression */}
+      {ex==="objection" ? (<>
+        <path d="M66,88 L90,96" stroke="#2c1810" strokeWidth="4" strokeLinecap="round"/>
+        <path d="M110,96 L134,88" stroke="#2c1810" strokeWidth="4" strokeLinecap="round"/>
+        <ellipse cx="80" cy="106" rx="13" ry="11" fill="#fff"/><ellipse cx="120" cy="106" rx="13" ry="11" fill="#fff"/>
+        <circle cx="80" cy="106" r="6" fill="#3a2010"/><circle cx="120" cy="106" r="6" fill="#3a2010"/>
+        <circle cx="80" cy="106" r="3.5" fill="#0a0604"/><circle cx="120" cy="106" r="3.5" fill="#0a0604"/>
+        <circle cx="83" cy="103" r="2.5" fill="#fff" opacity="0.9"/><circle cx="123" cy="103" r="2.5" fill="#fff" opacity="0.9"/>
+        <ellipse cx="100" cy="142" rx="16" ry="11" fill="#5a1a10"/>
+        <path d="M86,138 Q100,134 114,138" fill="#fff"/>
+        <path d="M88,146 Q100,150 112,146" fill="#c44040" opacity="0.6"/>
+        {[88,93.5,99,104.5].map((x,i)=><rect key={i} x={x} y="135" width="5" height="5" rx="1" fill="#f5f0ea"/>)}
+      </>) : ex==="thinking" ? (<>
+        <path d="M67,90 Q77,88 90,94" stroke="#2c1810" strokeWidth="3" strokeLinecap="round" fill="none"/>
+        <path d="M110,92 Q123,88 133,94" stroke="#2c1810" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+        <ellipse cx="80" cy="106" rx="10" ry="8" fill="#fff"/><ellipse cx="120" cy="106" rx="10" ry="8" fill="#fff"/>
+        <circle cx="84" cy="107" r="5" fill="#3a2010"/><circle cx="124" cy="107" r="5" fill="#3a2010"/>
+        <circle cx="84" cy="107" r="2.8" fill="#0a0604"/><circle cx="124" cy="107" r="2.8" fill="#0a0604"/>
+        <circle cx="86" cy="105" r="1.8" fill="#fff" opacity="0.9"/><circle cx="126" cy="105" r="1.8" fill="#fff" opacity="0.9"/>
+        <path d="M69,100 Q80,96 91,100" stroke="#2c1810" strokeWidth="1.5" fill="none"/>
+        <path d="M109,100 Q120,96 131,100" stroke="#2c1810" strokeWidth="1.5" fill="none"/>
+        <path d="M90,140 Q100,144 110,140" stroke="#9b6040" strokeWidth="2" fill="none" strokeLinecap="round"/>
       </>) : (<>
-        <ellipse cx="80" cy="110" rx="8" ry="7" fill="#fff" /><ellipse cx="120" cy="110" rx="8" ry="7" fill="#fff" />
-        <circle cx="80" cy="110" r="4" fill="#1a1a1a" /><circle cx="120" cy="110" r="4" fill="#1a1a1a" />
-        <path d="M85,135 Q100,145 115,135" stroke="#8b5e3c" strokeWidth="3" fill="none" />
+        <path d="M67,92 Q77,86 90,92" stroke="#2c1810" strokeWidth="3" strokeLinecap="round" fill="none"/>
+        <path d="M110,92 Q123,86 133,92" stroke="#2c1810" strokeWidth="3" strokeLinecap="round" fill="none"/>
+        <ellipse cx="80" cy="106" rx="11" ry="9" fill="#fff"/><ellipse cx="120" cy="106" rx="11" ry="9" fill="#fff"/>
+        <circle cx="80" cy="107" r="5.5" fill="#3a2010"/><circle cx="120" cy="107" r="5.5" fill="#3a2010"/>
+        <circle cx="80" cy="107" r="3" fill="#0a0604"/><circle cx="120" cy="107" r="3" fill="#0a0604"/>
+        <circle cx="83" cy="104" r="2.2" fill="#fff" opacity="0.9"/><circle cx="123" cy="104" r="2.2" fill="#fff" opacity="0.9"/>
+        <circle cx="77" cy="109" r="1" fill="#fff" opacity="0.4"/><circle cx="117" cy="109" r="1" fill="#fff" opacity="0.4"/>
+        <path d="M69,100 Q80,96 91,100" stroke="#2c1810" strokeWidth="1.5" fill="none"/>
+        <path d="M109,100 Q120,96 131,100" stroke="#2c1810" strokeWidth="1.5" fill="none"/>
+        <path d="M85,138 Q92,146 100,147 Q108,146 115,138" stroke="#9b6040" strokeWidth="2.2" fill="none" strokeLinecap="round"/>
       </>)}
-      {/* Badge */}
-      <circle cx="50" cy="210" r="9" fill="#f1c40f" stroke="#c9a80e" strokeWidth="1.5" />
-      <text x="50" y="214" textAnchor="middle" fontSize="9" fill="#8b6914" fontWeight="bold">A</text>
-      {/* Pointing hand for objection */}
-      {ex === "objection" && <path d="M170,160 L195,120 L200,125 L178,162" fill="#f0c8a0" />}
     </svg>
-  ),
+    );
+  },
   FALLACIOUS: (ex="normal") => (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
-      <rect x="20" y="180" width="160" height="120" rx="12" fill="#6e1444" />
-      <rect x="60" y="170" width="80" height="25" rx="6" fill="#e8c89e" />
+      <defs>
+        <linearGradient id="fa-s" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8a1850"/><stop offset="100%" stopColor="#4a0e2e"/></linearGradient>
+        <linearGradient id="fa-h" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0%" stopColor="#e8e8e8"/><stop offset="100%" stopColor="#b0b0b0"/></linearGradient>
+        <linearGradient id="fa-sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f5d4b0"/><stop offset="100%" stopColor="#e0b48a"/></linearGradient>
+        <linearGradient id="sw-d" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8ecae6"/><stop offset="100%" stopColor="#5dade2"/></linearGradient>
+      </defs>
+      {/* Suit */}
+      <path d="M28,195 Q30,182 58,176 L86,174 L114,174 L142,176 Q170,182 172,195 L172,300 L28,300Z" fill="url(#fa-s)"/>
+      <path d="M65,195 Q68,240 65,300" stroke="#3a0a1e" strokeWidth="1.2" fill="none" opacity="0.5"/>
+      <path d="M135,195 Q132,240 135,300" stroke="#3a0a1e" strokeWidth="1.2" fill="none" opacity="0.5"/>
+      <path d="M82,174 L68,198 L80,218 L100,202Z" fill="#6a1240"/>
+      <path d="M118,174 L132,198 L120,218 L100,202Z" fill="#6a1240"/>
+      <path d="M80,202 L120,202 L118,260 L82,260Z" fill="#3e0c26"/>
       {/* Cravat */}
-      <path d="M75,190 L100,220 L125,190" fill="#ddd" stroke="#bbb" strokeWidth="1.5" />
-      <path d="M80,195 L100,215 L120,195" fill="#eee" />
+      <path d="M82,174 L100,196 L118,174" fill="#f0ece4"/>
+      <path d="M85,178 L100,194 L115,178" fill="#faf8f4"/>
+      <path d="M88,180 Q94,186 100,192 Q106,186 112,180" stroke="#ddd8d0" strokeWidth="0.8" fill="none"/>
+      <circle cx="100" cy="186" r="3.5" fill="#c9a80e"/><circle cx="100" cy="186" r="2" fill="#f1c40f"/>
+      <circle cx="100" cy="214" r="2" fill="#c9a80e" opacity="0.7"/>
+      <circle cx="100" cy="228" r="2" fill="#c9a80e" opacity="0.7"/>
+      {/* Finger wag (normal only) */}
+      {ex!=="sweating" && <>
+        <path d="M160,168 Q165,155 170,138 L175,124" stroke="#e8c0a0" strokeWidth="8" fill="none" strokeLinecap="round"/>
+        <path d="M175,124 L178,110" stroke="#f0c8a0" strokeWidth="5" fill="none" strokeLinecap="round"/>
+        <path d="M172,128 L172,118" stroke="#f0c8a0" strokeWidth="3" fill="none" strokeLinecap="round"/>
+      </>}
+      {/* Neck */}
+      <path d="M86,150 Q86,172 88,176 L112,176 Q114,172 114,150Z" fill="url(#fa-sk)"/>
       {/* Head */}
-      <ellipse cx="100" cy="110" rx="44" ry="53" fill="#f0c8a0" />
+      <path d="M58,106 Q56,76 68,58 Q80,44 100,42 Q120,44 132,58 Q144,76 142,106 L140,128 Q136,145 126,153 Q114,162 100,164 Q86,162 74,153 Q64,145 60,128Z" fill="url(#fa-sk)"/>
+      <path d="M64,138 Q74,152 100,160 Q126,152 136,138 L140,128 Q136,145 126,153 Q114,162 100,164 Q86,162 74,153 Q64,145 60,128Z" fill="#d4a070" opacity="0.2"/>
+      <ellipse cx="57" cy="102" rx="6" ry="11" fill="#ecc8a2"/>
+      <ellipse cx="143" cy="102" rx="6" ry="11" fill="#ecc8a2"/>
       {/* Silver hair */}
-      <path d="M56,88 Q65,30 100,38 Q135,30 144,88" fill="#c0c0c0" />
-      <path d="M56,88 Q60,55 82,45 Q100,40 118,45 Q140,55 144,88" fill="#d8d8d8" />
-      {ex === "sweating" ? (<>
-        <ellipse cx="80" cy="110" rx="8" ry="5" fill="#fff" /><ellipse cx="120" cy="110" rx="8" ry="5" fill="#fff" />
-        <circle cx="80" cy="110" r="3" fill="#1a1a1a" /><circle cx="120" cy="110" r="3" fill="#1a1a1a" />
-        {/* Sweat */}
-        <path d="M150,92 Q153,102 150,112" stroke="#5dade2" strokeWidth="3" fill="none" />
-        <ellipse cx="150" cy="116" rx="3" ry="4" fill="#5dade2" />
-        <path d="M156,98 Q158,105 156,110" stroke="#5dade2" strokeWidth="2" fill="none" />
-        <path d="M82,138 Q100,130 118,138" stroke="#8b5e3c" strokeWidth="3" fill="none" />
+      <path d="M56,92 Q56,46 76,36 Q100,28 124,36 Q144,46 144,92" fill="url(#fa-h)"/>
+      <path d="M58,88 Q62,50 84,40 Q100,34 116,40 Q138,50 142,88" fill="#d8d8d8"/>
+      <path d="M68,58 Q86,42 100,40 Q114,42 132,58" stroke="#c4c4c4" strokeWidth="1.5" fill="none"/>
+      <path d="M72,52 Q88,40 100,38 Q112,40 128,52" stroke="#bbb" strokeWidth="1" fill="none" opacity="0.6"/>
+      {/* Nose */}
+      <path d="M98,108 L99,122 L96,124" stroke="#d4a070" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+      {/* Expression */}
+      {ex==="sweating" ? (<>
+        <path d="M68,84 Q78,90 90,92" stroke="#999" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+        <path d="M110,92 Q122,90 132,84" stroke="#999" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+        <ellipse cx="80" cy="102" rx="9" ry="6" fill="#fff"/><ellipse cx="120" cy="102" rx="9" ry="6" fill="#fff"/>
+        <circle cx="80" cy="103" r="3.5" fill="#444"/><circle cx="120" cy="103" r="3.5" fill="#444"/>
+        <circle cx="80" cy="103" r="2" fill="#111"/><circle cx="120" cy="103" r="2" fill="#111"/>
+        <circle cx="81" cy="101" r="1.2" fill="#fff" opacity="0.85"/><circle cx="121" cy="101" r="1.2" fill="#fff" opacity="0.85"/>
+        {/* Sweat drops on forehead */}
+        <ellipse cx="130" cy="72" rx="2.5" ry="4" fill="url(#sw-d)" opacity="0.8"/>
+        <ellipse cx="138" cy="82" rx="2" ry="3" fill="url(#sw-d)" opacity="0.65"/>
+        <ellipse cx="134" cy="92" rx="1.8" ry="2.8" fill="url(#sw-d)" opacity="0.5"/>
+        <ellipse cx="66" cy="78" rx="2" ry="3" fill="url(#sw-d)" opacity="0.6"/>
+        <ellipse cx="126" cy="60" rx="1.5" ry="2.5" fill="url(#sw-d)" opacity="0.45"/>
+        <line x1="130" y1="66" x2="130" y2="68" stroke="#8ecae6" strokeWidth="0.6" opacity="0.5"/>
+        <path d="M84,138 Q94,132 100,132 Q106,132 116,138" stroke="#9b6040" strokeWidth="2" fill="none" strokeLinecap="round"/>
       </>) : (<>
-        <ellipse cx="80" cy="110" rx="8" ry="7" fill="#fff" /><ellipse cx="120" cy="110" rx="8" ry="7" fill="#fff" />
-        <circle cx="80" cy="110" r="4" fill="#1a1a1a" /><circle cx="120" cy="110" r="4" fill="#1a1a1a" />
-        <line x1="66" y1="95" x2="90" y2="98" stroke="#888" strokeWidth="3" />
-        <line x1="110" y1="98" x2="134" y2="95" stroke="#888" strokeWidth="3" />
-        <path d="M85,135 Q100,148 115,135" stroke="#8b5e3c" strokeWidth="3" fill="none" />
+        <path d="M66,88 Q76,80 92,88" stroke="#999" strokeWidth="3" strokeLinecap="round" fill="none"/>
+        <path d="M108,88 Q124,80 134,88" stroke="#999" strokeWidth="3" strokeLinecap="round" fill="none"/>
+        <ellipse cx="80" cy="102" rx="10" ry="7.5" fill="#fff"/><ellipse cx="120" cy="102" rx="10" ry="7.5" fill="#fff"/>
+        <circle cx="80" cy="103" r="4.5" fill="#444"/><circle cx="120" cy="103" r="4.5" fill="#444"/>
+        <circle cx="80" cy="103" r="2.5" fill="#111"/><circle cx="120" cy="103" r="2.5" fill="#111"/>
+        <circle cx="82" cy="101" r="1.8" fill="#fff" opacity="0.85"/><circle cx="122" cy="101" r="1.8" fill="#fff" opacity="0.85"/>
+        <path d="M70,97 Q80,94 90,97" stroke="#999" strokeWidth="1.2" fill="none"/>
+        <path d="M110,97 Q120,94 130,97" stroke="#999" strokeWidth="1.2" fill="none"/>
+        <path d="M84,136 Q94,142 100,142 Q112,140 120,134" stroke="#9b6040" strokeWidth="2" fill="none" strokeLinecap="round"/>
       </>)}
-      {/* Dramatic finger wag */}
-      {ex !== "sweating" && <path d="M175,155 L190,130 L193,133 L180,158" fill="#f0c8a0" />}
     </svg>
   ),
   JUDGE: () => (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
-      <rect x="10" y="170" width="180" height="130" rx="12" fill="#1a1a1a" />
-      <rect x="60" y="162" width="80" height="22" rx="6" fill="#e8c89e" />
-      <ellipse cx="100" cy="100" rx="48" ry="55" fill="#f0c8a0" />
-      <ellipse cx="100" cy="65" rx="42" ry="26" fill="#f0c8a0" />
-      <path d="M56,82 Q50,65 58,55" stroke="#ddd" strokeWidth="5" fill="none" />
-      <path d="M144,82 Q150,65 142,55" stroke="#ddd" strokeWidth="5" fill="none" />
+      <defs>
+        <linearGradient id="j-rb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#222"/><stop offset="100%" stopColor="#0e0e0e"/></linearGradient>
+        <linearGradient id="j-sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f5d4b0"/><stop offset="100%" stopColor="#ddb08a"/></linearGradient>
+      </defs>
+      {/* Robe */}
+      <path d="M18,190 Q20,178 55,172 L85,170 L115,170 L145,172 Q180,178 182,190 L182,300 L18,300Z" fill="url(#j-rb)"/>
+      <path d="M55,190 Q58,240 55,300" stroke="#2a2a2a" strokeWidth="1.5" fill="none" opacity="0.6"/>
+      <path d="M100,200 L100,300" stroke="#2a2a2a" strokeWidth="1" fill="none" opacity="0.3"/>
+      <path d="M145,190 Q142,240 145,300" stroke="#2a2a2a" strokeWidth="1.5" fill="none" opacity="0.6"/>
+      {/* Collar */}
+      <path d="M80,170 L100,198 L120,170" fill="#f0ece6"/>
+      <path d="M84,173 L100,194 L116,173" fill="#faf8f4"/>
+      {/* Neck */}
+      <rect x="88" y="155" width="24" height="22" rx="8" fill="url(#j-sk)"/>
+      {/* Head */}
+      <ellipse cx="100" cy="96" rx="50" ry="56" fill="url(#j-sk)"/>
+      <ellipse cx="100" cy="62" rx="35" ry="18" fill="#f8dcc0" opacity="0.4"/>
+      {/* Ears */}
+      <ellipse cx="50" cy="100" rx="9" ry="15" fill="#ecc8a2"/>
+      <path d="M48,90 Q44,100 48,110" stroke="#d4a070" strokeWidth="1.5" fill="none"/>
+      <ellipse cx="150" cy="100" rx="9" ry="15" fill="#ecc8a2"/>
+      <path d="M152,90 Q156,100 152,110" stroke="#d4a070" strokeWidth="1.5" fill="none"/>
+      {/* Sideburns */}
+      <path d="M54,82 Q46,66 56,50" stroke="#e8e8e8" strokeWidth="8" fill="none" strokeLinecap="round"/>
+      <path d="M146,82 Q154,66 144,50" stroke="#e8e8e8" strokeWidth="8" fill="none" strokeLinecap="round"/>
+      <path d="M56,90 Q50,80 54,68" stroke="#ddd" strokeWidth="4" fill="none"/>
+      <path d="M144,90 Q150,80 146,68" stroke="#ddd" strokeWidth="4" fill="none"/>
+      {/* Bushy eyebrows */}
+      <path d="M64,84 Q74,76 90,84" stroke="#d8d8d8" strokeWidth="4.5" strokeLinecap="round" fill="none"/>
+      <path d="M110,84 Q126,76 136,84" stroke="#d8d8d8" strokeWidth="4.5" strokeLinecap="round" fill="none"/>
       {/* Glasses */}
-      <circle cx="80" cy="105" r="16" stroke="#333" strokeWidth="4" fill="none" />
-      <circle cx="120" cy="105" r="16" stroke="#333" strokeWidth="4" fill="none" />
-      <line x1="96" y1="105" x2="104" y2="105" stroke="#333" strokeWidth="4" />
-      <circle cx="80" cy="106" r="3.5" fill="#1a1a1a" /><circle cx="120" cy="106" r="3.5" fill="#1a1a1a" />
-      <path d="M85,135 Q100,145 115,135" stroke="#8b5e3c" strokeWidth="3" fill="none" />
+      <circle cx="80" cy="98" r="18" stroke="#2a2a2a" strokeWidth="4.5" fill="rgba(200,210,220,0.08)"/>
+      <circle cx="120" cy="98" r="18" stroke="#2a2a2a" strokeWidth="4.5" fill="rgba(200,210,220,0.08)"/>
+      <line x1="98" y1="98" x2="102" y2="98" stroke="#2a2a2a" strokeWidth="4"/>
+      <line x1="62" y1="94" x2="50" y2="90" stroke="#2a2a2a" strokeWidth="3"/>
+      <line x1="138" y1="94" x2="150" y2="90" stroke="#2a2a2a" strokeWidth="3"/>
+      <ellipse cx="73" cy="91" rx="5" ry="3.5" fill="#fff" opacity="0.12" transform="rotate(-15 73 91)"/>
+      <ellipse cx="113" cy="91" rx="5" ry="3.5" fill="#fff" opacity="0.12" transform="rotate(-15 113 91)"/>
+      {/* Eyes */}
+      <circle cx="80" cy="100" r="4" fill="#1a1a1a"/><circle cx="120" cy="100" r="4" fill="#1a1a1a"/>
+      <circle cx="81" cy="98" r="1.5" fill="#fff" opacity="0.7"/><circle cx="121" cy="98" r="1.5" fill="#fff" opacity="0.7"/>
+      {/* Nose */}
+      <ellipse cx="100" cy="118" rx="8" ry="6" fill="#e8c0a0"/>
+      <path d="M94,119 Q96,122 94,124" stroke="#d0a070" strokeWidth="1" fill="none" opacity="0.6"/>
+      <path d="M106,119 Q104,122 106,124" stroke="#d0a070" strokeWidth="1" fill="none" opacity="0.6"/>
+      {/* Smile */}
+      <path d="M84,134 Q92,142 100,143 Q108,142 116,134" stroke="#9b6040" strokeWidth="2.2" fill="none"/>
+      {/* Wrinkles */}
+      <path d="M60,125 Q64,121 68,125" stroke="#d4a070" strokeWidth="1" fill="none" opacity="0.4"/>
+      <path d="M132,125 Q136,121 140,125" stroke="#d4a070" strokeWidth="1" fill="none" opacity="0.4"/>
       {/* Gavel */}
-      <rect x="150" y="195" width="35" height="14" rx="4" fill="#8b6914" />
-      <rect x="162" y="182" width="10" height="28" rx="3" fill="#a0783c" />
+      <rect x="154" y="200" width="36" height="14" rx="4" fill="#8b6914" stroke="#6d5210" strokeWidth="1.2"/>
+      <rect x="167" y="190" width="10" height="28" rx="3" fill="#a07830"/>
+      <rect x="165" y="188" width="14" height="5" rx="2" fill="#8b6914"/>
+      <line x1="158" y1="205" x2="186" y2="205" stroke="#7a5c10" strokeWidth="0.5" opacity="0.4"/>
     </svg>
   ),
   LARRY: () => (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
-      <rect x="20" y="180" width="160" height="120" rx="12" fill="#e67e22" />
-      <rect x="60" y="170" width="80" height="22" rx="6" fill="#e8c89e" />
-      <path d="M40,190 Q40,168 65,165" fill="#d35400" /><path d="M160,190 Q160,168 135,165" fill="#d35400" />
-      <ellipse cx="100" cy="108" rx="45" ry="52" fill="#f0c8a0" />
-      <path d="M55,92 Q60,42 78,38 Q92,33 100,48 Q108,33 122,38 Q140,42 145,92" fill="#8B4513" />
-      <path d="M68,45 L64,32" stroke="#8B4513" strokeWidth="6" /><path d="M118,40 L126,28" stroke="#8B4513" strokeWidth="6" />
-      <ellipse cx="78" cy="110" rx="12" ry="10" fill="#fff" /><ellipse cx="122" cy="110" rx="12" ry="10" fill="#fff" />
-      <circle cx="78" cy="112" r="6" fill="#5a3510" /><circle cx="122" cy="112" r="6" fill="#5a3510" />
-      <circle cx="80" cy="108" r="2.5" fill="#fff" /><circle cx="124" cy="108" r="2.5" fill="#fff" />
-      <path d="M80,138 Q100,158 120,138" stroke="#8b5e3c" strokeWidth="3" fill="#fff" />
+      <defs>
+        <linearGradient id="l-hd" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f0922e"/><stop offset="100%" stopColor="#c86a10"/></linearGradient>
+        <linearGradient id="l-sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f8dcc0"/><stop offset="100%" stopColor="#e8c0a0"/></linearGradient>
+        <linearGradient id="l-hr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a05a22"/><stop offset="100%" stopColor="#6e3c12"/></linearGradient>
+      </defs>
+      {/* Hoodie */}
+      <path d="M28,195 Q30,182 58,176 L86,174 L114,174 L142,176 Q170,182 172,195 L172,300 L28,300Z" fill="url(#l-hd)"/>
+      <path d="M58,176 Q65,166 80,170 L120,170 Q135,166 142,176" fill="#d47018" stroke="#c06010" strokeWidth="1"/>
+      <line x1="88" y1="180" x2="86" y2="210" stroke="#ddd" strokeWidth="1.5"/>
+      <line x1="112" y1="180" x2="114" y2="210" stroke="#ddd" strokeWidth="1.5"/>
+      <circle cx="86" cy="212" r="2" fill="#ddd"/><circle cx="114" cy="212" r="2" fill="#ddd"/>
+      <line x1="100" y1="178" x2="100" y2="300" stroke="#c9a00e" strokeWidth="2.5"/>
+      <rect x="96" y="200" width="8" height="10" rx="2" fill="#ddd" stroke="#bbb" strokeWidth="0.8"/>
+      <path d="M88,174 L100,174 L112,174 L108,186 L92,186Z" fill="#f8f8f8"/>
+      {/* Neck */}
+      <rect x="88" y="158" width="24" height="20" rx="8" fill="url(#l-sk)"/>
+      {/* Head */}
+      <ellipse cx="100" cy="100" rx="48" ry="54" fill="url(#l-sk)"/>
+      {/* Ears */}
+      <ellipse cx="52" cy="104" rx="10" ry="14" fill="#ecc8a2"/>
+      <path d="M50,96 Q46,104 50,112" stroke="#d4a070" strokeWidth="1.5" fill="none"/>
+      <ellipse cx="148" cy="104" rx="10" ry="14" fill="#ecc8a2"/>
+      <path d="M150,96 Q154,104 150,112" stroke="#d4a070" strokeWidth="1.5" fill="none"/>
+      {/* Hair */}
+      <path d="M52,86 Q54,44 72,34 Q86,24 100,36 Q114,24 128,34 Q146,44 148,86" fill="url(#l-hr)"/>
+      <path d="M60,48 L52,26 L68,44" fill="#8B4513"/><path d="M78,34 L72,10 L86,30" fill="#8B4513"/>
+      <path d="M96,30 L92,6 L104,28" fill="#8B4513"/><path d="M116,32 L120,8 L126,34" fill="#8B4513"/>
+      <path d="M136,42 L144,22 L142,46" fill="#8B4513"/>
+      <path d="M58,68 Q68,54 80,60 Q90,50 100,58 Q110,48 120,58 Q130,50 142,66" fill="url(#l-hr)"/>
+      <path d="M72,40 Q88,30 100,32 Q112,30 128,40" stroke="#b8742e" strokeWidth="1.5" fill="none" opacity="0.5"/>
+      {/* Eyebrows */}
+      <path d="M60,84 Q72,78 88,86" stroke="#5a3510" strokeWidth="3" strokeLinecap="round" fill="none"/>
+      <path d="M112,86 Q128,78 140,84" stroke="#5a3510" strokeWidth="3" strokeLinecap="round" fill="none"/>
+      {/* Big eyes */}
+      <ellipse cx="78" cy="102" rx="14" ry="13" fill="#fff"/><ellipse cx="122" cy="102" rx="14" ry="13" fill="#fff"/>
+      <circle cx="78" cy="104" r="7.5" fill="#6a4420"/><circle cx="122" cy="104" r="7.5" fill="#6a4420"/>
+      <circle cx="78" cy="104" r="4" fill="#2a1208"/><circle cx="122" cy="104" r="4" fill="#2a1208"/>
+      <circle cx="82" cy="100" r="3.5" fill="#fff" opacity="0.9"/><circle cx="126" cy="100" r="3.5" fill="#fff" opacity="0.9"/>
+      <circle cx="76" cy="107" r="1.5" fill="#fff" opacity="0.4"/><circle cx="120" cy="107" r="1.5" fill="#fff" opacity="0.4"/>
+      {/* Nose */}
+      <ellipse cx="100" cy="118" rx="5" ry="3.5" fill="#e8c0a0"/>
+      {/* Grin */}
+      <path d="M78,134 Q88,150 100,152 Q112,150 122,134" stroke="#8b5e3c" strokeWidth="2" fill="#fff"/>
+      <line x1="88" y1="138" x2="88" y2="144" stroke="#e8e0d8" strokeWidth="1" opacity="0.5"/>
+      <line x1="96" y1="139" x2="96" y2="148" stroke="#e8e0d8" strokeWidth="1" opacity="0.5"/>
+      <line x1="104" y1="139" x2="104" y2="148" stroke="#e8e0d8" strokeWidth="1" opacity="0.5"/>
+      <line x1="112" y1="138" x2="112" y2="144" stroke="#e8e0d8" strokeWidth="1" opacity="0.5"/>
     </svg>
   ),
   BRENDA: () => (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
-      <rect x="20" y="180" width="160" height="120" rx="12" fill="#2c3e50" />
-      <rect x="60" y="170" width="80" height="20" rx="5" fill="#e8c89e" />
-      <ellipse cx="100" cy="108" rx="43" ry="52" fill="#f0c8a0" />
-      <ellipse cx="100" cy="65" rx="46" ry="30" fill="#4a2810" />
-      <path d="M54,72 Q52,110 62,128" stroke="#4a2810" strokeWidth="10" fill="none" />
-      <path d="M146,72 Q148,110 138,128" stroke="#4a2810" strokeWidth="10" fill="none" />
-      <ellipse cx="80" cy="110" rx="7" ry="7" fill="#fff" /><ellipse cx="120" cy="110" rx="7" ry="7" fill="#fff" />
-      <circle cx="80" cy="110" r="3.5" fill="#1a1a1a" /><circle cx="120" cy="110" r="3.5" fill="#1a1a1a" />
-      <path d="M85,138 Q100,145 115,138" stroke="#8b5e3c" strokeWidth="3" fill="none" />
-      <rect x="125" y="192" width="30" height="20" rx="4" fill="#f1c40f" stroke="#c9a80e" strokeWidth="1.5" />
-      <text x="140" y="206" textAnchor="middle" fontSize="9" fill="#333" fontWeight="bold">SEC</text>
+      <defs>
+        <linearGradient id="br-u" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3a5068"/><stop offset="100%" stopColor="#1e3040"/></linearGradient>
+      </defs>
+      <path d="M28,195 Q30,182 58,176 L142,176 Q170,182 172,195 L172,300 L28,300Z" fill="url(#br-u)"/>
+      <rect x="30" y="180" width="28" height="7" rx="2" fill="#4a6480"/>
+      <rect x="142" y="180" width="28" height="7" rx="2" fill="#4a6480"/>
+      <path d="M80,176 L100,196 L120,176" fill="#162430"/>
+      <rect x="86" y="174" width="28" height="14" rx="2" fill="#e8e4dc"/>
+      <polygon points="96,182 104,182 102,214 100,218 98,214" fill="#1a1a2e"/>
+      <rect x="32" y="198" width="10" height="24" rx="3" fill="#111"/>
+      <rect x="34" y="194" width="6" height="6" rx="1.5" fill="#2a2a2a"/>
+      <circle cx="37" cy="197" r="1" fill="#e85555" opacity="0.8"/>
+      <rect x="128" y="198" width="34" height="24" rx="4" fill="#f1c40f" stroke="#c9a80e" strokeWidth="1.5"/>
+      <text x="145" y="214" textAnchor="middle" fontSize="9" fill="#333" fontWeight="bold">SEC</text>
+      <rect x="88" y="160" width="24" height="20" rx="8" fill="#f0c8a0"/>
+      <ellipse cx="100" cy="100" rx="44" ry="52" fill="#f0c8a0"/>
+      <ellipse cx="56" cy="104" rx="6" ry="10" fill="#e8b890"/>
+      <ellipse cx="144" cy="104" rx="6" ry="10" fill="#e8b890"/>
+      {/* Hair */}
+      <ellipse cx="100" cy="64" rx="46" ry="28" fill="#3e2210"/>
+      <path d="M54,66 Q52,105 58,132" stroke="#3e2210" strokeWidth="13" fill="none" strokeLinecap="round"/>
+      <path d="M146,66 Q148,105 142,132" stroke="#3e2210" strokeWidth="13" fill="none" strokeLinecap="round"/>
+      <path d="M60,66 Q72,52 82,58 Q92,48 100,56 Q108,50 114,60" fill="#3e2210"/>
+      {/* Stern eyes */}
+      <line x1="64" y1="86" x2="90" y2="92" stroke="#2a1808" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="110" y1="92" x2="136" y2="86" stroke="#2a1808" strokeWidth="3" strokeLinecap="round"/>
+      <ellipse cx="80" cy="102" rx="9" ry="6.5" fill="#fff"/><ellipse cx="120" cy="102" rx="9" ry="6.5" fill="#fff"/>
+      <circle cx="80" cy="103" r="4" fill="#1a1a1a"/><circle cx="120" cy="103" r="4" fill="#1a1a1a"/>
+      <circle cx="82" cy="101" r="1.5" fill="#fff" opacity="0.8"/><circle cx="122" cy="101" r="1.5" fill="#fff" opacity="0.8"/>
+      <path d="M98,112 Q100,120 102,112" stroke="#d4a070" strokeWidth="1.3" fill="none"/>
+      <path d="M88,132 Q100,138 112,132" stroke="#9b6040" strokeWidth="2" fill="none"/>
     </svg>
   ),
   CHAD: () => (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
-      <rect x="20" y="180" width="160" height="120" rx="12" fill="#1a1a1a" />
-      <rect x="60" y="170" width="80" height="20" rx="5" fill="#dbb590" />
-      <path d="M62,190 Q100,210 138,190" stroke="#f1c40f" strokeWidth="3" fill="none" />
-      <ellipse cx="100" cy="108" rx="43" ry="52" fill="#dbb590" />
-      <path d="M57,78 Q66,32 100,28 Q134,32 143,78" fill="#1a1a1a" />
+      <defs>
+        <linearGradient id="ch-f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#222"/><stop offset="100%" stopColor="#0a0a0a"/></linearGradient>
+      </defs>
+      <path d="M28,195 Q30,182 58,176 L142,176 Q170,182 172,195 L172,300 L28,300Z" fill="url(#ch-f)"/>
+      <path d="M58,176 L66,162 L78,176" fill="#2a2a2a"/>
+      <path d="M142,176 L134,162 L122,176" fill="#2a2a2a"/>
+      <path d="M78,176 L100,208 L122,176" fill="#111"/>
+      <path d="M74,176 Q80,190 88,200 Q94,206 100,208 Q106,206 112,200 Q120,190 126,176" stroke="#f1c40f" strokeWidth="2.5" fill="none"/>
+      <circle cx="100" cy="210" r="6" fill="#f1c40f" stroke="#c9a80e" strokeWidth="1.2"/>
+      <text x="100" y="214" textAnchor="middle" fontSize="8" fill="#8b6914" fontWeight="bold">$</text>
+      <rect x="88" y="160" width="24" height="20" rx="8" fill="#dbb590"/>
+      <ellipse cx="100" cy="100" rx="44" ry="52" fill="#dbb590"/>
+      <ellipse cx="56" cy="104" rx="6" ry="11" fill="#c9a070"/>
+      <ellipse cx="144" cy="104" rx="6" ry="11" fill="#c9a070"/>
+      {/* AirPod */}
+      <path d="M54,98 Q52,102 53,108" stroke="#f0f0f0" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      <ellipse cx="53" cy="109" rx="2.5" ry="4" fill="#eee"/>
+      {/* Hair */}
+      <path d="M56,80 Q58,34 80,26 Q100,20 120,26 Q142,34 144,80" fill="#111"/>
+      <path d="M72,40 Q90,28 110,28 Q130,32 140,46" stroke="#2a2a2a" strokeWidth="1.5" fill="none"/>
+      {/* Brows */}
+      <path d="M64,84 Q76,76 88,84" stroke="#111" strokeWidth="3" strokeLinecap="round" fill="none"/>
+      <line x1="112" y1="86" x2="136" y2="80" stroke="#111" strokeWidth="3" strokeLinecap="round"/>
       {/* Sunglasses */}
-      <rect x="58" y="96" width="34" height="24" rx="5" fill="#111" stroke="#444" strokeWidth="2.5" />
-      <rect x="108" y="96" width="34" height="24" rx="5" fill="#111" stroke="#444" strokeWidth="2.5" />
-      <line x1="92" y1="107" x2="108" y2="107" stroke="#444" strokeWidth="3" />
-      <path d="M82,140 Q100,148 118,136" stroke="#8b5e3c" strokeWidth="3" fill="none" />
+      <rect x="58" y="92" width="34" height="24" rx="7" fill="#0a0a0a" stroke="#444" strokeWidth="2.5"/>
+      <rect x="108" y="92" width="34" height="24" rx="7" fill="#0a0a0a" stroke="#444" strokeWidth="2.5"/>
+      <line x1="92" y1="104" x2="108" y2="104" stroke="#444" strokeWidth="3.5"/>
+      <path d="M64,96 L74,96 L66,104" fill="#222" opacity="0.4"/>
+      <path d="M114,96 L124,96 L116,104" fill="#222" opacity="0.4"/>
+      <path d="M98,112 Q100,120 102,112" stroke="#b89070" strokeWidth="1.3" fill="none"/>
+      <path d="M84,134 Q96,142 100,142 Q110,140 122,132" stroke="#8b5e3c" strokeWidth="2.2" fill="none"/>
+      {/* Stubble */}
+      <circle cx="84" cy="140" r="0.6" fill="#888" opacity="0.25"/>
+      <circle cx="90" cy="144" r="0.6" fill="#888" opacity="0.2"/>
+      <circle cx="110" cy="142" r="0.6" fill="#888" opacity="0.25"/>
+      <circle cx="116" cy="138" r="0.6" fill="#888" opacity="0.2"/>
     </svg>
   ),
   LOOPSWORTH: () => (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
-      <rect x="20" y="180" width="160" height="120" rx="12" fill="#2c4a2c" />
-      <rect x="60" y="170" width="80" height="20" rx="5" fill="#e8c89e" />
-      <polygon points="82,190 100,200 118,190 100,180" fill="#8e1600" />
-      <ellipse cx="100" cy="108" rx="43" ry="52" fill="#e8c89e" />
-      <path d="M57,82 Q52,45 78,40 Q100,52 122,40 Q148,45 143,82" fill="#ccc" />
+      <defs>
+        <linearGradient id="lp-s" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3a5e3a"/><stop offset="100%" stopColor="#1e361e"/></linearGradient>
+      </defs>
+      <path d="M28,195 Q30,182 58,176 L142,176 Q170,182 172,195 L172,300 L28,300Z" fill="url(#lp-s)"/>
+      <path d="M80,176 L68,196 L80,212 L100,200Z" fill="#2a4a2a"/>
+      <path d="M120,176 L132,196 L120,212 L100,200Z" fill="#2a4a2a"/>
+      <path d="M80,200 L120,200 L118,260 L82,260Z" fill="#2a502a"/>
+      <polygon points="86,178 100,190 114,178 100,168" fill="#8e1600"/>
+      <circle cx="100" cy="180" r="3" fill="#b02000"/>
+      <circle cx="100" cy="210" r="1.8" fill="#c9a80e"/><circle cx="100" cy="222" r="1.8" fill="#c9a80e"/>
+      <path d="M132,200 L142,195 L144,206 L134,208Z" fill="#e8e4dc" opacity="0.7"/>
+      <rect x="88" y="160" width="24" height="20" rx="8" fill="#e8c89e"/>
+      <ellipse cx="100" cy="100" rx="44" ry="52" fill="#e8c89e"/>
+      <ellipse cx="56" cy="104" rx="7" ry="12" fill="#d8b88a"/>
+      <ellipse cx="144" cy="104" rx="7" ry="12" fill="#d8b88a"/>
+      {/* Wild grey hair */}
+      <path d="M54,80 Q46,40 70,30 Q88,22 100,40 Q112,22 130,30 Q154,40 146,80" fill="#c4c4c4"/>
+      <path d="M46,66 Q36,50 48,34" stroke="#ccc" strokeWidth="10" fill="none" strokeLinecap="round"/>
+      <path d="M154,66 Q164,50 152,34" stroke="#ccc" strokeWidth="10" fill="none" strokeLinecap="round"/>
+      <path d="M50,48 Q40,34 48,22" stroke="#bbb" strokeWidth="4" fill="none"/>
+      <path d="M150,48 Q160,34 152,22" stroke="#bbb" strokeWidth="4" fill="none"/>
+      <path d="M64,38 Q82,26 100,30 Q118,26 136,38" stroke="#b8b8b8" strokeWidth="1.5" fill="none"/>
+      {/* Brows */}
+      <path d="M64,84 Q76,76 90,84" stroke="#888" strokeWidth="3" strokeLinecap="round" fill="none"/>
+      <path d="M110,84 Q124,76 136,84" stroke="#888" strokeWidth="3" strokeLinecap="round" fill="none"/>
+      {/* Eyes */}
+      <ellipse cx="80" cy="100" rx="9" ry="8" fill="#fff"/>
+      <circle cx="80" cy="101" r="4.5" fill="#2a2a2a"/><circle cx="80" cy="101" r="2.5" fill="#0a0a0a"/>
+      <circle cx="82" cy="99" r="1.5" fill="#fff" opacity="0.8"/>
+      <ellipse cx="120" cy="100" rx="9" ry="8" fill="#fff"/>
+      <circle cx="120" cy="101" r="4.5" fill="#2a2a2a"/><circle cx="120" cy="101" r="2.5" fill="#0a0a0a"/>
+      <circle cx="122" cy="99" r="1.5" fill="#fff" opacity="0.8"/>
       {/* Monocle */}
-      <circle cx="120" cy="106" r="15" stroke="#c9a80e" strokeWidth="3.5" fill="none" />
-      <line x1="135" y1="108" x2="155" y2="135" stroke="#c9a80e" strokeWidth="2" />
-      <ellipse cx="80" cy="110" rx="8" ry="7" fill="#fff" /><ellipse cx="120" cy="110" rx="8" ry="7" fill="#fff" />
-      <circle cx="80" cy="110" r="4" fill="#1a1a1a" /><circle cx="120" cy="110" r="4" fill="#1a1a1a" />
-      <path d="M85,138 Q100,145 115,138" stroke="#8b5e3c" strokeWidth="3" fill="none" />
+      <circle cx="120" cy="100" r="16" stroke="#c9a80e" strokeWidth="3" fill="none"/>
+      <line x1="136" y1="104" x2="154" y2="138" stroke="#c9a80e" strokeWidth="1.8"/>
+      {/* Mustache + nose */}
+      <path d="M97,114 L100,126 L103,114" stroke="#c4a070" strokeWidth="1.3" fill="none"/>
+      <path d="M88,128 Q94,124 100,126 Q106,124 112,128" stroke="#a0a0a0" strokeWidth="2.5" fill="none"/>
+      <path d="M86,136 Q100,144 114,136" stroke="#8b5e3c" strokeWidth="2" fill="none"/>
     </svg>
   ),
   WILLOW: () => (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
-      <rect x="20" y="180" width="160" height="120" rx="12" fill="#5d4e8c" />
-      <rect x="60" y="170" width="80" height="20" rx="5" fill="#e8c89e" />
-      <polygon points="90,195 100,215 110,195" fill="#9b59b6" stroke="#7d3c98" strokeWidth="1.5" />
-      <ellipse cx="100" cy="108" rx="43" ry="52" fill="#f0c8a0" />
-      <path d="M57,72 Q48,35 82,30 Q100,26 118,30 Q152,35 143,72" fill="#c0392b" />
-      <path d="M57,72 Q50,115 45,165" stroke="#c0392b" strokeWidth="14" fill="none" />
-      <path d="M143,72 Q150,115 155,165" stroke="#c0392b" strokeWidth="14" fill="none" />
-      <ellipse cx="80" cy="110" rx="8" ry="7" fill="#fff" /><ellipse cx="120" cy="110" rx="8" ry="7" fill="#fff" />
-      <circle cx="80" cy="110" r="4" fill="#2ecc71" /><circle cx="120" cy="110" r="4" fill="#2ecc71" />
-      <path d="M85,138 Q100,145 115,138" stroke="#8b5e3c" strokeWidth="3" fill="none" />
-      <circle cx="138" cy="52" r="8" fill="#f39c12" /><circle cx="138" cy="52" r="3.5" fill="#e74c3c" />
+      <defs>
+        <linearGradient id="wi-t" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7a6aaa"/><stop offset="100%" stopColor="#4a3a6e"/></linearGradient>
+        <linearGradient id="wi-hr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#d4402e"/><stop offset="100%" stopColor="#8e2218"/></linearGradient>
+        <linearGradient id="crys" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#c9b5e8"/><stop offset="50%" stopColor="#9b7cc8"/><stop offset="100%" stopColor="#7a5aaa"/></linearGradient>
+      </defs>
+      <path d="M28,195 Q30,182 58,176 L142,176 Q170,182 172,195 L172,300 L28,300Z" fill="url(#wi-t)"/>
+      <path d="M60,178 Q80,172 100,186 Q120,172 140,178 L140,200 Q120,190 100,200 Q80,190 60,200Z" fill="#8a7aba"/>
+      <path d="M80,174 Q90,184 100,188 Q110,184 120,174" stroke="#9b59b6" strokeWidth="1.5" fill="none"/>
+      <polygon points="96,192 100,206 104,192" fill="#9b59b6" stroke="#7d3c98" strokeWidth="1"/>
+      <circle cx="100" cy="198" r="2.5" fill="#e8d5f5"/><circle cx="100" cy="198" r="1" fill="#fff" opacity="0.6"/>
+      {/* Crystal */}
+      <polygon points="28,238 38,212 48,238 38,250" fill="url(#crys)" stroke="#7b6ba8" strokeWidth="1"/>
+      <polygon points="32,230 38,216 44,230" fill="#d4c0f0" opacity="0.5"/>
+      <line x1="38" y1="218" x2="38" y2="244" stroke="#fff" strokeWidth="0.5" opacity="0.3"/>
+      <rect x="88" y="160" width="24" height="20" rx="8" fill="#f0c8a0"/>
+      <ellipse cx="100" cy="100" rx="44" ry="52" fill="#f0c8a0"/>
+      <ellipse cx="56" cy="104" rx="6" ry="10" fill="#e8b890"/>
+      <ellipse cx="144" cy="104" rx="6" ry="10" fill="#e8b890"/>
+      {/* Long red hair */}
+      <path d="M54,68 Q46,26 76,18 Q100,12 124,18 Q154,26 146,68" fill="url(#wi-hr)"/>
+      <path d="M54,68 Q48,96 44,128 Q40,158 46,186 Q48,200 44,224" stroke="#c0392b" strokeWidth="18" fill="none" strokeLinecap="round"/>
+      <path d="M146,68 Q152,96 156,128 Q160,158 154,186 Q152,200 156,224" stroke="#c0392b" strokeWidth="18" fill="none" strokeLinecap="round"/>
+      <path d="M46,116 Q42,136 48,158" stroke="#a02e22" strokeWidth="2" fill="none" opacity="0.5"/>
+      <path d="M154,116 Q158,136 152,158" stroke="#a02e22" strokeWidth="2" fill="none" opacity="0.5"/>
+      <path d="M60,66 Q72,52 82,58 Q92,46 100,56 Q108,46 118,58 Q128,52 140,66" fill="url(#wi-hr)"/>
+      {/* Flower ornament */}
+      <circle cx="142" cy="50" r="10" fill="#f39c12"/>
+      <ellipse cx="135" cy="44" rx="4" ry="5" fill="#f1c40f" opacity="0.7" transform="rotate(-30 135 44)"/>
+      <ellipse cx="149" cy="44" rx="4" ry="5" fill="#f1c40f" opacity="0.7" transform="rotate(30 149 44)"/>
+      <ellipse cx="142" cy="40" rx="3.5" ry="5" fill="#f1c40f" opacity="0.7"/>
+      <circle cx="142" cy="50" r="5.5" fill="#e74c3c"/><circle cx="142" cy="50" r="3" fill="#f9e547"/>
+      {/* Eyes */}
+      <path d="M66,86 Q78,80 90,86" stroke="#7a3018" strokeWidth="2" strokeLinecap="round" fill="none"/>
+      <path d="M110,86 Q122,80 134,86" stroke="#7a3018" strokeWidth="2" strokeLinecap="round" fill="none"/>
+      <ellipse cx="80" cy="102" rx="10" ry="9" fill="#fff"/><ellipse cx="120" cy="102" rx="10" ry="9" fill="#fff"/>
+      <circle cx="80" cy="103" r="5.5" fill="#2ecc71"/><circle cx="120" cy="103" r="5.5" fill="#2ecc71"/>
+      <circle cx="80" cy="103" r="3" fill="#1a6a38"/><circle cx="120" cy="103" r="3" fill="#1a6a38"/>
+      <circle cx="82" cy="100" r="2.2" fill="#fff" opacity="0.9"/><circle cx="122" cy="100" r="2.2" fill="#fff" opacity="0.9"/>
+      <path d="M98,112 Q100,120 102,112" stroke="#d4a070" strokeWidth="1.3" fill="none"/>
+      <path d="M86,132 Q100,142 114,132" stroke="#9b6040" strokeWidth="2" fill="none"/>
     </svg>
   ),
   "DR. VON STUFFINGTON": () => (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
-      <rect x="20" y="180" width="160" height="120" rx="12" fill="#ecf0f1" stroke="#bdc3c7" strokeWidth="2" />
-      <rect x="60" y="170" width="80" height="20" rx="5" fill="#e8c89e" />
-      <text x="45" y="225" fontSize="18">🐟</text><text x="130" y="215" fontSize="14">🐠</text><text x="80" y="260" fontSize="12">🐡</text>
-      <ellipse cx="100" cy="108" rx="43" ry="52" fill="#e8c89e" />
-      <ellipse cx="100" cy="68" rx="40" ry="24" fill="#e8c89e" />
-      <path d="M57,82 Q52,65 60,55" stroke="#8b6914" strokeWidth="8" fill="none" />
-      <path d="M143,82 Q148,65 140,55" stroke="#8b6914" strokeWidth="8" fill="none" />
-      <rect x="62" y="98" width="26" height="20" rx="5" stroke="#333" strokeWidth="3.5" fill="none" />
-      <rect x="112" y="98" width="26" height="20" rx="5" stroke="#333" strokeWidth="3.5" fill="none" />
-      <line x1="88" y1="107" x2="112" y2="107" stroke="#333" strokeWidth="3" />
-      <circle cx="75" cy="108" r="3.5" fill="#1a1a1a" /><circle cx="125" cy="108" r="3.5" fill="#1a1a1a" />
-      <path d="M78,130 Q88,136 100,130 Q112,136 122,130" stroke="#8b6914" strokeWidth="3.5" fill="none" />
+      <defs>
+        <linearGradient id="lc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f0ece6"/><stop offset="100%" stopColor="#d8d4cc"/></linearGradient>
+      </defs>
+      <path d="M28,195 Q30,182 58,176 L142,176 Q170,182 172,195 L172,300 L28,300Z" fill="url(#lc)" stroke="#c0bdb5" strokeWidth="1"/>
+      <path d="M80,176 L68,196 L80,216 L100,204Z" fill="#e0dcd4"/>
+      <path d="M120,176 L132,196 L120,216 L100,204Z" fill="#e0dcd4"/>
+      <rect x="84" y="178" width="32" height="24" rx="2" fill="#e8e4da"/>
+      <polygon points="96,184 104,184 102,216 100,220 98,216" fill="#2c3e50"/>
+      <rect x="122" y="212" width="28" height="24" rx="3" fill="#e4e0d8" stroke="#c8c4bc" strokeWidth="0.8"/>
+      <rect x="128" y="207" width="3" height="14" rx="1" fill="#2980b9"/>
+      <rect x="133" y="209" width="3" height="12" rx="1" fill="#c0392b"/>
+      <rect x="138" y="208" width="3" height="13" rx="1" fill="#27ae60"/>
+      {/* Fish stickers */}
+      <text x="46" y="230" fontSize="16" transform="rotate(-12 46 230)">🐟</text>
+      <text x="132" y="260" fontSize="11" transform="rotate(8 132 260)">🐠</text>
+      <text x="58" y="270" fontSize="9" transform="rotate(-6 58 270)">🐡</text>
+      <text x="82" y="252" fontSize="8" transform="rotate(4 82 252)">🦀</text>
+      <rect x="88" y="160" width="24" height="20" rx="8" fill="#e8c89e"/>
+      <ellipse cx="100" cy="100" rx="44" ry="52" fill="#e8c89e"/>
+      <ellipse cx="56" cy="104" rx="7" ry="12" fill="#d8b88a"/>
+      <ellipse cx="144" cy="104" rx="7" ry="12" fill="#d8b88a"/>
+      {/* Thinning hair */}
+      <ellipse cx="100" cy="64" rx="40" ry="22" fill="#e4d8c4"/>
+      <path d="M58,78 Q50,58 62,44" stroke="#9b7a24" strokeWidth="9" fill="none" strokeLinecap="round"/>
+      <path d="M142,78 Q150,58 138,44" stroke="#9b7a24" strokeWidth="9" fill="none" strokeLinecap="round"/>
+      <path d="M68,48 Q84,38 100,40 Q116,38 132,48" stroke="#a88830" strokeWidth="2" fill="none"/>
+      {/* Brows */}
+      <path d="M62,84 Q74,76 90,84" stroke="#8b6914" strokeWidth="4" strokeLinecap="round" fill="none"/>
+      <path d="M110,84 Q126,76 138,84" stroke="#8b6914" strokeWidth="4" strokeLinecap="round" fill="none"/>
+      {/* Glasses */}
+      <rect x="62" y="92" width="28" height="22" rx="5" stroke="#2a2a2a" strokeWidth="3.5" fill="rgba(200,210,220,0.06)"/>
+      <rect x="110" y="92" width="28" height="22" rx="5" stroke="#2a2a2a" strokeWidth="3.5" fill="rgba(200,210,220,0.06)"/>
+      <line x1="90" y1="103" x2="110" y2="103" stroke="#2a2a2a" strokeWidth="3"/>
+      <line x1="62" y1="100" x2="56" y2="96" stroke="#2a2a2a" strokeWidth="2.5"/>
+      <line x1="138" y1="100" x2="144" y2="96" stroke="#2a2a2a" strokeWidth="2.5"/>
+      <circle cx="76" cy="104" r="4" fill="#1a1a1a"/><circle cx="124" cy="104" r="4" fill="#1a1a1a"/>
+      <circle cx="77" cy="102" r="1.5" fill="#fff" opacity="0.7"/><circle cx="125" cy="102" r="1.5" fill="#fff" opacity="0.7"/>
+      {/* Nose + mustache */}
+      <ellipse cx="100" cy="120" rx="7" ry="5" fill="#dcc0a0"/>
+      <path d="M78,126 Q86,134 94,130 Q100,128 106,130 Q114,134 122,126" stroke="#8b6914" strokeWidth="4" fill="none" strokeLinecap="round"/>
+      <path d="M82,128 Q88,132 94,130" stroke="#a88830" strokeWidth="2" fill="none"/>
+      <path d="M106,130 Q112,132 118,128" stroke="#a88830" strokeWidth="2" fill="none"/>
+      <path d="M90,138 Q100,142 110,138" stroke="#8b5e3c" strokeWidth="1.5" fill="none" opacity="0.4"/>
     </svg>
   ),
   "???": () => (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
-      <rect x="10" y="165" width="180" height="135" rx="12" fill="#111" />
-      <ellipse cx="100" cy="100" rx="48" ry="55" fill="#1a1a1a" />
-      <text x="100" y="120" textAnchor="middle" fontSize="60" fill="#444" fontWeight="bold">?</text>
+      <defs>
+        <radialGradient id="mg" cx="50%" cy="40%" r="50%"><stop offset="0%" stopColor="#222"/><stop offset="100%" stopColor="#0a0a0a"/></radialGradient>
+      </defs>
+      <rect x="15" y="170" width="170" height="130" rx="12" fill="#0e0e0e"/>
+      <path d="M55,170 Q50,162 50,152 L150,152 Q150,162 145,170" fill="#0a0a0a"/>
+      <ellipse cx="100" cy="96" rx="48" ry="55" fill="url(#mg)"/>
+      {/* Glasses glint hint */}
+      <ellipse cx="80" cy="90" rx="6" ry="3" fill="#444" opacity="0.2" transform="rotate(-10 80 90)"/>
+      <ellipse cx="120" cy="90" rx="6" ry="3" fill="#444" opacity="0.2" transform="rotate(10 120 90)"/>
+      <line x1="96" y1="90" x2="104" y2="90" stroke="#444" opacity="0.15" strokeWidth="2"/>
+      <text x="100" y="116" textAnchor="middle" fontSize="52" fill="#3a3a3a" fontWeight="bold">?</text>
     </svg>
   ),
 };

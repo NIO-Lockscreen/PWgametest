@@ -1,3 +1,2 @@
-// KittenTTS engine replaced by Web Speech API — see voice-manager.js
-// This file is kept as a placeholder so any stale imports don't hard-error.
+// Legacy placeholder — TTS now uses Web Speech API via voice-manager.js
 export const KittenTTSEngine = null;

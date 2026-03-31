@@ -32,7 +32,7 @@ export default function App() {
 
         {ttsStatus === 'idle' && (
           <div style={styles.choiceBox}>
-            <p style={styles.choiceText}>This game features AI voice acting powered by KittenTTS (~25MB download, runs in your browser).</p>
+            <p style={styles.choiceText}>This game features voice acting using your browser's built-in speech synthesis.</p>
             <button style={styles.btnPrimary} onClick={startWithTTS}>
               🎤 Play with Voice Acting
             </button>
@@ -46,14 +46,14 @@ export default function App() {
           <div style={styles.loadingBox}>
             <div style={styles.spinner} />
             <p style={styles.loadText}>{loadMsg || 'Preparing...'}</p>
-            <p style={styles.loadSub}>First load downloads the model. It's cached after that.</p>
+            <p style={styles.loadSub}>Setting up browser speech synthesis...</p>
           </div>
         )}
 
         {ttsStatus === 'error' && (
           <div style={styles.choiceBox}>
             <p style={{...styles.choiceText, color: '#e85555'}}>
-              Failed to load TTS model. You can still play without voices.
+              Failed to initialize voice synthesis. You can still play without voices.
             </p>
             <button style={styles.btnSecondary} onClick={skipTTS}>
               Continue without voices
