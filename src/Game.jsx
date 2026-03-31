@@ -723,6 +723,15 @@ export default function FallacyWright({ ttsEnabled = false }) {
   const [cli, setCli] = useState(0);
   const [musicOn, setMusicOn] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
+  const [ttsStatus, setTtsStatus] = useState(""); // loading progress message
+
+  // Load TTS engine once on mount
+  useEffect(() => {
+    VoiceManager.load((msg) => setTtsStatus(msg)).catch((err) => {
+      console.warn("TTS load failed:", err);
+      setTtsStatus("Voice unavailable");
+    });
+  }, []);
 
   const sc = D[si];
   const cl = phase==="text"&&sc?.type==="text"?sc.lines[li]:phase==="correct-scene"?cLines[cli]:null;
@@ -805,6 +814,7 @@ export default function FallacyWright({ ttsEnabled = false }) {
     <div className="fw-gv">⚖️</div><div className="fw-tl">FALLACY WRIGHT</div>
     <div className="fw-tsub">Ace Logician</div><div className="fw-tc">"The Case of the Colossal Duck"</div>
     <button className="fw-sb" onClick={()=>{setStarted(true);AudioEngine.titleStart();if(!musicOn){AudioEngine.startMusic();setMusicOn(true);}}}>Begin Trial</button>
+    {ttsStatus&&<div style={{position:"absolute",bottom:16,left:0,right:0,textAlign:"center",fontSize:11,color:"#aaa",opacity:0.7}}>{ttsStatus}</div>}
   </div></div></>);
 
   // Game over
