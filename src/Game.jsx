@@ -709,7 +709,7 @@ const Confetti = () => {
   return <div className="fw-cf">{Array.from({length:60},(_,i)=><div key={i} className="fw-cp" style={{left:`${Math.random()*100}%`,background:c[i%6],width:6+Math.random()*12,height:(6+Math.random()*12)*.5,borderRadius:Math.random()>.5?"50%":"2px",animationDuration:`${2+Math.random()*3}s`,animationDelay:`${Math.random()*2.5}s`}} />)}</div>;
 };
 
-const useTypewriter = (text, speed = 18, active = true, onTick, onStart) => {
+const useTypewriter = (text, speed = 18, active = true, onTick, onStart, onDone) => {
   const [displayed, setDisplayed] = useState("");
   const [done, setDone] = useState(false);
   const skip = useRef(false);
@@ -725,12 +725,12 @@ const useTypewriter = (text, speed = 18, active = true, onTick, onStart) => {
       i++; setDisplayed(text.slice(0,i));
       tickCount.current++;
       if (tickCount.current % 3 === 0 && onTick) onTick();
-      if(i<text.length)tm.current=setTimeout(tick,speed);else setDone(true);
+      if(i<text.length)tm.current=setTimeout(tick,speed);else{setDone(true);if(onDone)onDone();}
     };
     tm.current = setTimeout(tick, speed);
     return () => clearTimeout(tm.current);
   }, [text, active, speed]);
-  return { displayed, done, skipToEnd: () => { skip.current=true; setDisplayed(text||""); setDone(true); } };
+  return { displayed, done, skipToEnd: () => { skip.current=true; setDisplayed(text||""); setDone(true); /* intentionally no onDone — user skipped */ } };
 };
 
 /* ═══════════════════════════════════════════
@@ -773,14 +773,19 @@ export default function FallacyWright({ ttsEnabled = false }) {
 
   const ttsRef = useRef(() => {});
   ttsRef.current = () => {
-    if(cl?.t && cl?.s) VoiceManager.speak(cl.t, cl.s);
-    // Fire stage-direction SFX for narrator lines like [PHONE RINGS]
+    // Stage-direction SFX fires immediately when line starts (instant sound)
     if(cl?.s === "NARRATOR" && cl?.t?.startsWith("[") && cl?.t?.endsWith("]")) {
       AudioEngine.stageDirection(cl.t);
     }
   };
 
-  const {displayed,done,skipToEnd} = useTypewriter(cl?.t||"",18,!!cl,()=>blipRef.current(),()=>ttsRef.current());
+  // TTS fires only AFTER typewriter finishes — prevents inference from blocking clicks
+  const ttsDoneRef = useRef(() => {});
+  ttsDoneRef.current = () => {
+    if(cl?.t && cl?.s) VoiceManager.speak(cl.t, cl.s);
+  };
+
+  const {displayed,done,skipToEnd} = useTypewriter(cl?.t||"",18,!!cl,()=>blipRef.current(),()=>ttsRef.current(),()=>ttsDoneRef.current());
   const tq = D.filter(s=>s.type==="question").length;
   const pct = (ans/tq)*100;
 
