@@ -77,7 +77,9 @@ async function loadModel(onProgress) {
 
 async function textToPhonemes(text) {
   if (!phonemizerModule) throw new Error('Phonemizer not loaded');
-  return await phonemizerModule.phonemize(text, 'en-us');
+  // phonemize() returns an array (one element per word/group) — join with space
+  const result = await phonemizerModule.phonemize(text, 'en-us');
+  return Array.isArray(result) ? result.join(' ') : result;
 }
 
 function tokenize(phonemes) {
