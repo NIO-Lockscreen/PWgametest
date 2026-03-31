@@ -1,36 +1,35 @@
 /**
- * Voice Manager — maps game characters to KittenTTS voices with speed settings
+ * Voice Manager — maps game characters to kokoro-js voices with speed settings
  *
- * KittenTTS Nano voices:
- *   Female: Bella, Luna, Rosie, Kiki
- *   Male: Jasper, Bruno, Hugo, Leo
+ * Available kokoro-js voices (en-us):
+ *   Female: af_bella, af_sky, af_sarah, af_nicole, af_heart, af_nova
+ *   Male:   am_michael, am_fenrir, am_liam, am_echo, am_eric
  */
 
 import { KittenTTSEngine } from './kitten-engine.js';
 
 // Character → voice mapping with personality-matched speeds
 const CHARACTER_VOICES = {
-  WRIGHT:              { voice: 'Jasper', speed: 1.05 }, // Confident, slightly brisk
-  FALLACIOUS:          { voice: 'Hugo',   speed: 0.88 }, // Deep, dramatic, slower
-  JUDGE:               { voice: 'Bruno',  speed: 0.82 }, // Elderly, deliberate
-  LARRY:               { voice: 'Leo',    speed: 1.2  }, // Fast, panicky
-  BRENDA:              { voice: 'Rosie',  speed: 0.95 }, // No-nonsense
-  CHAD:                { voice: 'Leo',    speed: 1.25 }, // Fast bro-talk
-  LOOPSWORTH:          { voice: 'Hugo',   speed: 0.85 }, // Pretentious professor
-  WILLOW:              { voice: 'Kiki',   speed: 0.9  }, // Calm, airy
-  'DR. VON STUFFINGTON': { voice: 'Bruno', speed: 0.85 }, // Stuffy academic
-  '???':               { voice: 'Bruno',  speed: 0.75 }, // Deep, mysterious
-  NARRATOR:            { voice: 'Bella',  speed: 1.0  }, // Neutral narrator
+  WRIGHT:                { voice: 'Jasper', speed: 1.05 }, // Confident, slightly brisk
+  FALLACIOUS:            { voice: 'Bruno',  speed: 0.88 }, // Deep, dramatic, slower
+  JUDGE:                 { voice: 'Hugo',   speed: 0.82 }, // Elderly, deliberate
+  LARRY:                 { voice: 'Leo',    speed: 1.2  }, // Fast, panicky
+  BRENDA:                { voice: 'Rosie',  speed: 0.95 }, // No-nonsense
+  CHAD:                  { voice: 'Leo',    speed: 1.25 }, // Fast bro-talk
+  LOOPSWORTH:            { voice: 'Bruno',  speed: 0.85 }, // Pretentious professor
+  WILLOW:                { voice: 'Kiki',   speed: 0.9  }, // Calm, airy
+  'DR. VON STUFFINGTON': { voice: 'Hugo',   speed: 0.85 }, // Stuffy academic
+  '???':                 { voice: 'Hugo',   speed: 0.75 }, // Deep, mysterious
+  NARRATOR:              { voice: 'Bella',  speed: 1.0  }, // Neutral narrator
 };
 
 let enabled = true;
-let speaking = false;
 let currentCancel = null;
 
 function cleanTextForSpeech(text) {
   let clean = text.replace(/\[.*?\]/g, '').trim(); // Remove stage directions
   if (clean.startsWith('(') && clean.endsWith(')')) clean = clean.slice(1, -1); // Unwrap thoughts
-  if (clean.startsWith('—') || clean.length < 3) return ''; // Skip titles
+  if (clean.startsWith('—') || clean.length < 3) return ''; // Skip titles/dashes
   return clean;
 }
 
@@ -50,9 +49,8 @@ export const VoiceManager = {
   },
 
   stop() {
-    speaking = false;
-    // Cancel any pending speech by setting flag
     if (currentCancel) currentCancel();
+    KittenTTSEngine.stop();
   },
 
   async speak(text, characterKey) {
@@ -63,10 +61,9 @@ export const VoiceManager = {
 
     const config = CHARACTER_VOICES[characterKey] || CHARACTER_VOICES.NARRATOR;
 
-    // Stop any current speech
+    // Cancel any in-progress speech
     VoiceManager.stop();
 
-    speaking = true;
     let cancelled = false;
     currentCancel = () => { cancelled = true; };
 
@@ -76,12 +73,10 @@ export const VoiceManager = {
     } catch (err) {
       console.warn('VoiceManager speak error:', err);
     } finally {
-      speaking = false;
       currentCancel = null;
     }
   },
 
-  // Get voice info for a character (for UI display)
   getVoiceInfo(characterKey) {
     return CHARACTER_VOICES[characterKey] || CHARACTER_VOICES.NARRATOR;
   },

@@ -1,144 +1,61 @@
 /**
- * KittenTTS Browser Engine
- * Adapted from clowerweb/kitten-tts-web-demo (proven working implementation)
- * Uses ONNX Runtime Web + phonemizer package
- * 8 voices, 24kHz output, ~25MB model
+ * KittenTTS Browser Engine — powered by kokoro-js
+ * Uses kokoro-js which handles tokenization, style selection, and ONNX inference
+ * correctly for the KittenTTS/Kokoro model family.
  */
 
-import { cleanTextForTTS, chunkText } from './text-cleaner.js';
-import { cachedFetch } from './model-cache.js';
+import { KokoroTTS } from 'kokoro-js';
 
 const SAMPLE_RATE = 24000;
 
-// Voice IDs as stored in voices.json
+// Map friendly names to kokoro-js voice IDs
 const VOICE_IDS = {
-  Bella:  'expr-voice-2-f',
-  Jasper: 'expr-voice-2-m',
-  Luna:   'expr-voice-3-f',
-  Bruno:  'expr-voice-3-m',
-  Rosie:  'expr-voice-4-f',
-  Hugo:   'expr-voice-4-m',
-  Kiki:   'expr-voice-5-f',
-  Leo:    'expr-voice-5-m',
+  Bella:   'af_bella',
+  Jasper:  'am_michael',
+  Luna:    'af_sky',
+  Bruno:   'am_fenrir',
+  Rosie:   'af_sarah',
+  Hugo:    'am_liam',
+  Kiki:    'af_nicole',
+  Leo:     'am_echo',
 };
 
-let ort = null;
-let session = null;
-let voiceEmbeddings = null;
-let vocab = null;
-let phonemizerModule = null;
+let tts = null;
 let _loadPromise = null;
 
 async function loadModel(onProgress) {
-  if (session) return;
+  if (tts) return;
   if (_loadPromise) return _loadPromise;
 
   _loadPromise = (async () => {
     try {
-      onProgress?.('Loading ONNX Runtime...');
-      ort = await import('onnxruntime-web');
-      // Let onnxruntime-web resolve WASM from the Vite bundle (same-origin)
-      // Disable multi-threading to avoid SharedArrayBuffer/COOP/COEP issues
-      ort.env.wasm.numThreads = 1;
-
-      onProgress?.('Downloading KittenTTS model (~25MB)...');
-      // Fetch model from HuggingFace (avoids bundling the 23MB .onnx in the repo)
-      const modelUrl = 'https://huggingface.co/onnx-community/KittenTTS-Nano-v0.8-ONNX/resolve/main/onnx/model.onnx';
-      const modelResponse = await cachedFetch(modelUrl);
-      const modelBuffer = await modelResponse.arrayBuffer();
-
-      onProgress?.('Initializing inference...');
-      session = await ort.InferenceSession.create(modelBuffer, {
-        executionProviders: [{ name: 'wasm', simd: true }],
-      });
-
-      onProgress?.('Loading tokenizer...');
-      const tokResp = await cachedFetch(`${import.meta.env.BASE_URL}tts-model/tokenizer.json`);
-      const tokenizerData = await tokResp.json();
-      vocab = tokenizerData.model.vocab;
-
-      onProgress?.('Loading voices...');
-      const voicesResp = await cachedFetch(`${import.meta.env.BASE_URL}tts-model/voices.json`);
-      voiceEmbeddings = await voicesResp.json();
-
-      onProgress?.('Loading phonemizer...');
-      phonemizerModule = await import('phonemizer');
-
+      onProgress?.('Loading KittenTTS model (~25MB)...');
+      tts = await KokoroTTS.from_pretrained(
+        'onnx-community/Kokoro-82M-v1.0-ONNX',
+        {
+          dtype: 'q8',
+          device: 'wasm',
+          progress_callback: (info) => {
+            if (info.status === 'downloading') {
+              const pct = info.total
+                ? Math.round((info.loaded / info.total) * 100)
+                : '...';
+              onProgress?.(`Downloading model... ${pct}%`);
+            } else if (info.status === 'loading') {
+              onProgress?.('Loading model weights...');
+            }
+          },
+        }
+      );
       onProgress?.('Ready!');
     } catch (err) {
-      session = null;
+      tts = null;
       _loadPromise = null;
       throw err;
     }
   })();
 
   return _loadPromise;
-}
-
-async function textToPhonemes(text) {
-  if (!phonemizerModule) throw new Error('Phonemizer not loaded');
-  // phonemize() returns an array (one element per word/group) — join with space
-  const result = await phonemizerModule.phonemize(text, 'en-us');
-  return Array.isArray(result) ? result.join(' ') : result;
-}
-
-function tokenize(phonemes) {
-  if (!vocab) throw new Error('Tokenizer not loaded');
-  // KittenTTS wraps phonemes in $ boundaries
-  const wrapped = `$${phonemes}$`;
-  return wrapped.split('').map(char => {
-    const id = vocab[char];
-    if (id === undefined) {
-      console.warn(`Unknown phoneme char: "${char}"`);
-      return 0; // unknown -> $ token
-    }
-    return id;
-  });
-}
-
-async function generateAudio(text, voiceId, speed = 1.0) {
-  if (!session || !voiceEmbeddings || !vocab) {
-    throw new Error('Model not loaded');
-  }
-
-  const embedding = voiceEmbeddings[voiceId];
-  if (!embedding) throw new Error(`Voice not found: ${voiceId}`);
-
-  // Clean -> phonemize -> tokenize
-  const cleaned = cleanTextForTTS(text);
-  if (!cleaned) return new Float32Array(0);
-
-  const phonemes = await textToPhonemes(cleaned);
-  const tokenIds = tokenize(phonemes);
-  if (tokenIds.length === 0) return new Float32Array(0);
-
-  // Create tensors - exact same names as the proven demo
-  const inputIds = new ort.Tensor('int64', BigInt64Array.from(tokenIds.map(BigInt)), [1, tokenIds.length]);
-  const style = new ort.Tensor('float32', Float32Array.from(embedding[0]), [1, embedding[0].length]);
-  const speedTensor = new ort.Tensor('float32', new Float32Array([speed]), [1]);
-
-  const results = await session.run({
-    input_ids: inputIds,
-    style: style,
-    speed: speedTensor,
-  });
-
-  // Output tensor is called 'waveform'
-  // NOTE: speed is already handled by the model's speed tensor — do NOT resample here
-  let audioData = new Float32Array(results.waveform.data);
-
-  // Clean NaN and normalize to a reasonable peak level
-  let maxAmp = 0;
-  for (let i = 0; i < audioData.length; i++) {
-    if (isNaN(audioData[i])) audioData[i] = 0;
-    else maxAmp = Math.max(maxAmp, Math.abs(audioData[i]));
-  }
-  if (maxAmp > 0) {
-    const norm = 0.9 / maxAmp;
-    for (let i = 0; i < audioData.length; i++) audioData[i] *= norm;
-  }
-
-  return audioData;
 }
 
 let currentAudioCtx = null;
@@ -151,12 +68,12 @@ function stopPlayback() {
   } catch (e) { /* ignore */ }
 }
 
-function playPcm(pcmData) {
+function playPcm(pcmData, sampleRate) {
   return new Promise((resolve) => {
     stopPlayback();
     if (!pcmData || pcmData.length === 0) { resolve(); return; }
-    currentAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const buffer = currentAudioCtx.createBuffer(1, pcmData.length, SAMPLE_RATE);
+    currentAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
+    const buffer = currentAudioCtx.createBuffer(1, pcmData.length, sampleRate);
     buffer.getChannelData(0).set(pcmData);
     currentSource = currentAudioCtx.createBufferSource();
     currentSource.buffer = buffer;
@@ -195,17 +112,16 @@ export const KittenTTSEngine = {
   stop: stopPlayback,
 
   speak: async (text, voiceName = 'Bella', speed = 1.0) => {
-    if (!KittenTTSEngine.loaded) return;
+    if (!KittenTTSEngine.loaded || !tts) return;
     const voiceId = VOICE_IDS[voiceName] || VOICE_IDS.Bella;
-    // Chunk long text into sentences
-    const chunks = chunkText(cleanTextForTTS(text));
-    for (const chunk of chunks) {
-      try {
-        const pcm = await generateAudio(chunk, voiceId, speed);
-        if (pcm.length > 0) await playPcm(pcm);
-      } catch (err) {
-        console.warn('KittenTTS speak chunk error:', err);
+
+    try {
+      const audio = await tts.generate(text, { voice: voiceId, speed });
+      if (audio && audio.audio && audio.audio.length > 0) {
+        await playPcm(audio.audio, audio.sampling_rate ?? SAMPLE_RATE);
       }
+    } catch (err) {
+      console.warn('KittenTTS speak error:', err);
     }
   },
 };
