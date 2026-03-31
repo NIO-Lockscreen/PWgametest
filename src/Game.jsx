@@ -50,6 +50,35 @@ const AudioEngine = (() => {
       const notes = [523,659,784,1047,784,1047,1319];
       notes.forEach((f,i) => playNote(f, 0.25, "square", 0.06, i*0.12));
     },
+    // Stage-direction SFX
+    phoneRing: () => {
+      const ring = (t) => { playNote(480, 0.15, "sine", 0.12, t); playNote(440, 0.15, "sine", 0.10, t); };
+      ring(0); ring(0.2); ring(0.7); ring(0.9);
+    },
+    witnessEntry: () => {
+      playNote(392, 0.12, "triangle", 0.07);
+      playNote(523, 0.25, "triangle", 0.09, 0.1);
+    },
+    crowdReact: () => {
+      [220,277,330,370].forEach((f,i) => playNote(f, 0.6, "sine", 0.04, i*0.04));
+    },
+    dramaticPause: () => {
+      playNote(110, 0.8, "triangle", 0.06);
+      playNote(116, 0.8, "sine", 0.04);
+    },
+    violin: () => {
+      [392,349,330,294].forEach((f,i) => playNote(f, 0.3, "sawtooth", 0.05, i*0.25));
+    },
+    stageDirection: (text) => {
+      const t = text.toLowerCase();
+      if (t.includes("phone ring"))                    return AudioEngine.phoneRing();
+      if (t.includes("new witness") || t.includes("takes the stand")) return AudioEngine.witnessEntry();
+      if (t.includes("crowd erupts") || t.includes("crowd")) return AudioEngine.crowdReact();
+      if (t.includes("long pause") || t.includes("tense") || t.includes("adjusts")) return AudioEngine.dramaticPause();
+      if (t.includes("violin") || t.includes("tear") || t.includes("wipes")) return AudioEngine.violin();
+      if (t.includes("gavel") || t.includes("court is now")) return AudioEngine.gavel();
+      if (t.includes("screen goes black") || t.includes("winks at camera")) return AudioEngine.transition();
+    },
     // Background music loop using oscillators
     _musicNodes: null,
     _musicPlaying: false,
@@ -743,7 +772,13 @@ export default function FallacyWright({ ttsEnabled = false }) {
   blipRef.current = () => { if(!isNarrator) AudioEngine.textBlip(); };
 
   const ttsRef = useRef(() => {});
-  ttsRef.current = () => { if(cl?.t && cl?.s) VoiceManager.speak(cl.t, cl.s); };
+  ttsRef.current = () => {
+    if(cl?.t && cl?.s) VoiceManager.speak(cl.t, cl.s);
+    // Fire stage-direction SFX for narrator lines like [PHONE RINGS]
+    if(cl?.s === "NARRATOR" && cl?.t?.startsWith("[") && cl?.t?.endsWith("]")) {
+      AudioEngine.stageDirection(cl.t);
+    }
+  };
 
   const {displayed,done,skipToEnd} = useTypewriter(cl?.t||"",18,!!cl,()=>blipRef.current(),()=>ttsRef.current());
   const tq = D.filter(s=>s.type==="question").length;
