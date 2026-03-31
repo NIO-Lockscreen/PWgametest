@@ -10,26 +10,26 @@ import { KittenTTSEngine } from './kitten-engine.js';
 
 // Character → voice mapping with personality-matched speeds
 const CHARACTER_VOICES = {
-  WRIGHT:                { voice: 'Jasper', speed: 1.05 }, // Confident, slightly brisk
-  FALLACIOUS:            { voice: 'Bruno',  speed: 0.88 }, // Deep, dramatic, slower
-  JUDGE:                 { voice: 'Hugo',   speed: 0.82 }, // Elderly, deliberate
-  LARRY:                 { voice: 'Leo',    speed: 1.2  }, // Fast, panicky
-  BRENDA:                { voice: 'Rosie',  speed: 0.95 }, // No-nonsense
-  CHAD:                  { voice: 'Leo',    speed: 1.25 }, // Fast bro-talk
-  LOOPSWORTH:            { voice: 'Bruno',  speed: 0.85 }, // Pretentious professor
-  WILLOW:                { voice: 'Kiki',   speed: 0.9  }, // Calm, airy
-  'DR. VON STUFFINGTON': { voice: 'Hugo',   speed: 0.85 }, // Stuffy academic
-  '???':                 { voice: 'Hugo',   speed: 0.75 }, // Deep, mysterious
-  NARRATOR:              { voice: 'Bella',  speed: 1.0  }, // Neutral narrator
+  WRIGHT:                { voice: 'Jasper', speed: 1.05 },
+  FALLACIOUS:            { voice: 'Bruno',  speed: 0.88 },
+  JUDGE:                 { voice: 'Hugo',   speed: 0.82 },
+  LARRY:                 { voice: 'Leo',    speed: 1.2  },
+  BRENDA:                { voice: 'Rosie',  speed: 0.95 },
+  CHAD:                  { voice: 'Leo',    speed: 1.25 },
+  LOOPSWORTH:            { voice: 'Bruno',  speed: 0.85 },
+  WILLOW:                { voice: 'Kiki',   speed: 0.9  },
+  'DR. VON STUFFINGTON': { voice: 'Hugo',   speed: 0.85 },
+  '???':                 { voice: 'Hugo',   speed: 0.75 },
+  NARRATOR:              { voice: 'Bella',  speed: 1.0  },
 };
 
 let enabled = true;
 let currentCancel = null;
 
 function cleanTextForSpeech(text) {
-  let clean = text.replace(/\[.*?\]/g, '').trim(); // Remove stage directions
-  if (clean.startsWith('(') && clean.endsWith(')')) clean = clean.slice(1, -1); // Unwrap thoughts
-  if (clean.startsWith('—') || clean.length < 3) return ''; // Skip titles/dashes
+  let clean = text.replace(/\[.*?\]/g, '').trim();
+  if (clean.startsWith('(') && clean.endsWith(')')) clean = clean.slice(1, -1);
+  if (clean.startsWith('—') || clean.length < 3) return '';
   return clean;
 }
 
@@ -54,6 +54,7 @@ export const VoiceManager = {
   },
 
   async speak(text, characterKey) {
+    // Silently skip if not loaded — never throw into the game component
     if (!enabled || !KittenTTSEngine.loaded) return;
 
     const clean = cleanTextForSpeech(text);
@@ -61,7 +62,6 @@ export const VoiceManager = {
 
     const config = CHARACTER_VOICES[characterKey] || CHARACTER_VOICES.NARRATOR;
 
-    // Cancel any in-progress speech
     VoiceManager.stop();
 
     let cancelled = false;
