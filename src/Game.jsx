@@ -655,6 +655,96 @@ const P = {
 const portrait = (s, e) => (P[s] || P["???"])(e);
 
 /* ═══════════════════════════════════════════
+   CUSTOM CHARACTER SYSTEM
+   ═══════════════════════════════════════════ */
+const CUSTOM_PREFIX = 'fw-char-';
+const CHARACTER_SLOTS = [
+  { key:"WRIGHT", expr:"normal", label:"Phoenix Wright", pose:"Normal" },
+  { key:"WRIGHT", expr:"thinking", label:"Phoenix Wright", pose:"Thinking" },
+  { key:"WRIGHT", expr:"objection", label:"Phoenix Wright", pose:"Objection (big sprite)" },
+  { key:"FALLACIOUS", expr:"normal", label:"Prosecutor Fallacious", pose:"Normal" },
+  { key:"FALLACIOUS", expr:"sweating", label:"Prosecutor Fallacious", pose:"Sweating" },
+  { key:"JUDGE", expr:"normal", label:"Judge Gullible III", pose:"Normal" },
+  { key:"LARRY", expr:"normal", label:"Larry Butts", pose:"Normal" },
+  { key:"BRENDA", expr:"normal", label:"Brenda Nosybody", pose:"Normal" },
+  { key:"CHAD", expr:"normal", label:"Chad Mainstream", pose:"Normal" },
+  { key:"LOOPSWORTH", expr:"normal", label:"Prof. Loopsworth", pose:"Normal" },
+  { key:"WILLOW", expr:"normal", label:"Willow Earthchild", pose:"Normal" },
+  { key:"DR. VON STUFFINGTON", expr:"normal", label:"Dr. Von Stuffington", pose:"Normal" },
+  { key:"???", expr:"normal", label:"???", pose:"Mystery" },
+];
+const slotId = (key, expr) => `${key}:${expr}`;
+const loadCustom = (key, expr) => { try { return localStorage.getItem(CUSTOM_PREFIX + slotId(key,expr)); } catch(e) { return null; } };
+const saveCustom = (key, expr, dataUrl) => { try { localStorage.setItem(CUSTOM_PREFIX + slotId(key,expr), dataUrl); } catch(e) {} };
+const removeCustom = (key, expr) => { try { localStorage.removeItem(CUSTOM_PREFIX + slotId(key,expr)); } catch(e) {} };
+const CustomImg = ({src}) => <img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"center bottom"}} />;
+
+const CharacterImportModal = ({ onClose, customPortraits, setCustomPortraits }) => {
+  const fileRef = useRef(null);
+  const [activeSlot, setActiveSlot] = useState(null);
+
+  const handleFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeSlot) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      saveCustom(activeSlot.key, activeSlot.expr, dataUrl);
+      setCustomPortraits(prev => ({...prev, [slotId(activeSlot.key, activeSlot.expr)]: dataUrl}));
+      setActiveSlot(null);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleRemove = (slot) => {
+    removeCustom(slot.key, slot.expr);
+    setCustomPortraits(prev => {
+      const n = {...prev};
+      delete n[slotId(slot.key, slot.expr)];
+      return n;
+    });
+  };
+
+  return (
+    <div style={{position:"absolute",inset:0,zIndex:200,background:"rgba(4,4,12,0.95)",display:"flex",flexDirection:"column",alignItems:"center",overflow:"auto",padding:"30px 16px"}}>
+      <input ref={fileRef} type="file" accept="image/png,image/webp,image/gif" style={{display:"none"}} onChange={handleFile} />
+      <div style={{fontFamily:"'Cinzel',serif",fontSize:"clamp(18px,4vw,26px)",fontWeight:900,color:"#e8b84a",letterSpacing:3,marginBottom:6}}>IMPORT CHARACTERS</div>
+      <div style={{fontSize:13,color:"#8a8aaa",marginBottom:24,textAlign:"center",maxWidth:500}}>Upload transparent PNGs to replace any character portrait. Images are scaled to fit automatically and saved to your browser.</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:12,width:"100%",maxWidth:900}}>
+        {CHARACTER_SLOTS.map(slot => {
+          const id = slotId(slot.key, slot.expr);
+          const custom = customPortraits[id];
+          return (
+            <div key={id} style={{background:"#12122a",border:"1.5px solid "+(custom?"#5be87a44":"#333355"),borderRadius:6,padding:12,display:"flex",gap:12,alignItems:"center"}}>
+              {/* Preview */}
+              <div style={{width:60,height:80,background:"#0a0a18",borderRadius:4,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",border:"1px solid #222"}}>
+                {custom
+                  ? <img src={custom} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}} />
+                  : <div style={{width:50,height:70}}>{(P[slot.key]||P["???"])(slot.expr)}</div>
+                }
+              </div>
+              {/* Info + buttons */}
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontFamily:"'Cinzel',serif",fontSize:12,fontWeight:700,color:CC[slot.key]||"#aaa",letterSpacing:1}}>{slot.label}</div>
+                <div style={{fontSize:11,color:"#666",marginBottom:6}}>{slot.pose}</div>
+                <div style={{display:"flex",gap:6}}>
+                  <button onClick={()=>{setActiveSlot(slot);fileRef.current?.click();}} style={{fontSize:11,padding:"4px 10px",background:custom?"#1a3a1a":"#1a1a3a",color:custom?"#5be87a":"#8a8aaa",border:"1px solid "+(custom?"#5be87a44":"#33335544"),borderRadius:3,cursor:"pointer",fontFamily:"'Cinzel',serif",letterSpacing:1}}>
+                    {custom?"Replace":"Upload PNG"}
+                  </button>
+                  {custom && <button onClick={()=>handleRemove(slot)} style={{fontSize:11,padding:"4px 10px",background:"#3a1a1a",color:"#e85555",border:"1px solid #e8555544",borderRadius:3,cursor:"pointer",fontFamily:"'Cinzel',serif",letterSpacing:1}}>Remove</button>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <button onClick={onClose} style={{marginTop:24,padding:"12px 40px",fontFamily:"'Cinzel',serif",fontSize:14,fontWeight:700,letterSpacing:2,color:"#0a0a14",background:"#e8b84a",border:"none",cursor:"pointer",textTransform:"uppercase",clipPath:"polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)"}}>Done</button>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════
    BACKGROUNDS
    ═══════════════════════════════════════════ */
 const BG = {
@@ -1112,6 +1202,24 @@ export default function FallacyWright({ ttsEnabled = false }) {
 
   const hasSave = !!saved && saved.si > 0;
 
+  // ── Custom character portraits ──
+  const [customPortraits, setCustomPortraits] = useState(() => {
+    const loaded = {};
+    CHARACTER_SLOTS.forEach(slot => {
+      const d = loadCustom(slot.key, slot.expr);
+      if (d) loaded[slotId(slot.key, slot.expr)] = d;
+    });
+    return loaded;
+  });
+  const [showImport, setShowImport] = useState(false);
+
+  // Custom-aware portrait renderer
+  const renderPortrait = (charKey, expr) => {
+    const custom = customPortraits[slotId(charKey, expr)];
+    if (custom) return <CustomImg src={custom} />;
+    return portrait(charKey, expr);
+  };
+
   // Load TTS engine once on mount
   useEffect(() => {
     VoiceManager.load((msg) => setTtsStatus(msg)).catch((err) => {
@@ -1228,7 +1336,10 @@ export default function FallacyWright({ ttsEnabled = false }) {
       {hasSave && <button className="fw-sb" onClick={()=>startGame(true)}>Continue Trial</button>}
       {hasSave && <div style={{fontSize:12,color:"#8a8aaa",marginTop:-4}}>Progress: {saved.ans||0} questions answered, {saved.score||0} correct</div>}
       <button className={hasSave?"fw-sb2":"fw-sb"} onClick={()=>startGame(false)}>{hasSave?"Start Over":"Begin Trial"}</button>
+      <button className="fw-sb2" style={{marginTop:8}} onClick={()=>setShowImport(true)}>
+        🎨 Import Custom Characters{Object.keys(customPortraits).length>0?` (${Object.keys(customPortraits).length})`:""}</button>
     </div>
+    {showImport && <CharacterImportModal onClose={()=>setShowImport(false)} customPortraits={customPortraits} setCustomPortraits={setCustomPortraits} />}
     {ttsStatus&&<div style={{position:"absolute",bottom:16,left:0,right:0,textAlign:"center",fontSize:11,color:"#aaa",opacity:0.7}}>{ttsStatus}</div>}
   </div></div></>);
 
@@ -1259,7 +1370,11 @@ export default function FallacyWright({ ttsEnabled = false }) {
 
         {/* WRIGHT OBJECTION PORTRAIT — actual sprite */}
         {objection&&(
-          <div className="fw-ch obj"><img src="/wright-objection.png" alt="OBJECTION!" style={{width:"100%",height:"auto"}} /></div>
+          <div className="fw-ch obj">
+            {customPortraits[slotId("WRIGHT","objection")]
+              ? <CustomImg src={customPortraits[slotId("WRIGHT","objection")]} />
+              : <img src="/wright-objection.png" alt="OBJECTION!" style={{width:"100%",height:"auto"}} />}
+          </div>
         )}
 
         {/* QUESTION overlay */}
@@ -1276,7 +1391,7 @@ export default function FallacyWright({ ttsEnabled = false }) {
 
         {/* SINGLE LARGE CHARACTER PORTRAIT */}
         {(phase==="text"||phase==="correct-scene")&&!objection&&activeSpeaker&&(
-          <div className={`fw-ch ${objection?"obj":""}`}>{portrait(activeSpeaker,charEx)}</div>
+          <div className={`fw-ch ${objection?"obj":""}`}>{renderPortrait(activeSpeaker,charEx)}</div>
         )}
 
         {/* DIALOGUE BOX — during objection, show Wright's objection text */}
