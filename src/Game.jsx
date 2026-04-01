@@ -677,7 +677,7 @@ const slotId = (key, expr) => `${key}:${expr}`;
 const loadCustom = (key, expr) => { try { return localStorage.getItem(CUSTOM_PREFIX + slotId(key,expr)); } catch(e) { return null; } };
 const saveCustom = (key, expr, dataUrl) => { try { localStorage.setItem(CUSTOM_PREFIX + slotId(key,expr), dataUrl); } catch(e) {} };
 const removeCustom = (key, expr) => { try { localStorage.removeItem(CUSTOM_PREFIX + slotId(key,expr)); } catch(e) {} };
-const CustomImg = ({src}) => <img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"center bottom"}} />;
+const CustomImg = ({src}) => <img src={src} alt="" />;
 
 const CharacterImportModal = ({ onClose, customPortraits, setCustomPortraits }) => {
   const fileRef = useRef(null);
@@ -1088,8 +1088,10 @@ const css = `@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@7
 .fw-sc{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column}
 .fw-bg{position:absolute;inset:0;opacity:.45}
 /* SINGLE LARGE PORTRAIT — PW style */
-.fw-ch{position:absolute;bottom:140px;left:50%;transform:translateX(-50%);z-index:5;width:clamp(180px,40vw,280px);transition:all .3s ease;filter:drop-shadow(0 8px 24px rgba(0,0,0,.6))}
-.fw-ch.obj{animation:portraitSlam .4s ease-out;z-index:8;bottom:-10px;left:5%;transform:translateX(0);width:clamp(280px,60vw,720px);filter:drop-shadow(0 12px 40px rgba(0,0,0,.8))}
+.fw-ch{position:absolute;bottom:130px;left:50%;transform:translateX(-50%);z-index:5;height:clamp(220px,48vh,400px);filter:drop-shadow(0 8px 24px rgba(0,0,0,.6));transition:all .3s ease}
+.fw-ch svg,.fw-ch img{height:100%;width:auto;display:block}
+.fw-ch.obj{animation:portraitSlam .4s ease-out;z-index:8;bottom:-10px;left:5%;height:auto;transform:translateX(0);width:clamp(280px,60vw,720px);filter:drop-shadow(0 12px 40px rgba(0,0,0,.8))}
+.fw-ch.obj img{width:100%;height:auto}
 @keyframes portraitSlam{0%{transform:scale(1.15);opacity:0.7}40%{transform:scale(.97);opacity:1}100%{transform:scale(1)}}
 /* DIALOGUE BOX — PW style bottom panel */
 .fw-dl{position:absolute;bottom:0;left:0;right:0;z-index:10;background:linear-gradient(180deg,rgba(10,10,20,.95),rgba(5,5,12,.98));border-top:3px solid #e8b84a;min-height:130px;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-start}
@@ -1372,7 +1374,7 @@ export default function FallacyWright({ ttsEnabled = false }) {
         {objection&&(
           <div className="fw-ch obj">
             {customPortraits[slotId("WRIGHT","objection")]
-              ? <CustomImg src={customPortraits[slotId("WRIGHT","objection")]} />
+              ? <img src={customPortraits[slotId("WRIGHT","objection")]} alt="" style={{width:"100%",height:"auto"}} />
               : <img src="/wright-objection.png" alt="OBJECTION!" style={{width:"100%",height:"auto"}} />}
           </div>
         )}
