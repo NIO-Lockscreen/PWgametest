@@ -5,9 +5,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
    ═══════════════════════════════════════════ */
 const AudioEngine = (() => {
   let ctx = null;
+  let _muted = false;
   const getCtx = () => { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); return ctx; };
 
   const playNote = (freq, dur, type = "square", vol = 0.08, delay = 0) => {
+    if (_muted) return;
     try {
       const c = getCtx(), o = c.createOscillator(), g = c.createGain();
       o.type = type; o.frequency.value = freq;
@@ -20,6 +22,9 @@ const AudioEngine = (() => {
   };
 
   return {
+    get muted() { return _muted; },
+    mute: () => { _muted = true; },
+    unmute: () => { _muted = false; },
     textBlip: () => playNote(600 + Math.random() * 200, 0.04, "square", 0.03),
     objection: () => {
       // Dramatic rising chord
@@ -84,6 +89,7 @@ const AudioEngine = (() => {
     _musicPlaying: false,
     startMusic: function() {
       if (this._musicPlaying) return;
+      if (_muted) return;
       try {
         const c = getCtx();
         const master = c.createGain();
@@ -91,7 +97,7 @@ const AudioEngine = (() => {
         master.connect(c.destination);
         // Simple arpeggiated ambient loop
         const playLoop = () => {
-          if (!this._musicPlaying) return;
+          if (!this._musicPlaying || _muted) return;
           const chords = [
             [220,277,330],[196,247,294],[185,233,277],[220,277,330]
           ];
@@ -968,7 +974,7 @@ const css = `@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@7
 .fw-bg{position:absolute;inset:0;opacity:.45}
 /* SINGLE LARGE PORTRAIT — PW style */
 .fw-ch{position:absolute;bottom:140px;left:50%;transform:translateX(-50%);z-index:5;width:clamp(180px,40vw,280px);transition:all .3s ease;filter:drop-shadow(0 8px 24px rgba(0,0,0,.6))}
-.fw-ch.obj{animation:portraitSlam .4s ease-out}
+.fw-ch.obj{animation:portraitSlam .4s ease-out;z-index:45;bottom:100px;width:clamp(200px,45vw,320px);filter:drop-shadow(0 12px 40px rgba(0,0,0,.8))}
 @keyframes portraitSlam{0%{transform:translateX(-50%) scale(1.15)}40%{transform:translateX(-50%) scale(.97)}100%{transform:translateX(-50%) scale(1)}}
 /* DIALOGUE BOX — PW style bottom panel */
 .fw-dl{position:absolute;bottom:0;left:0;right:0;z-index:10;background:linear-gradient(180deg,rgba(10,10,20,.95),rgba(5,5,12,.98));border-top:3px solid #e8b84a;min-height:130px;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-start}
@@ -981,7 +987,7 @@ const css = `@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@7
 .fw-ah{position:absolute;bottom:8px;right:20px;font-size:12px;color:#555;animation:bl 1.2s step-end infinite}
 @keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
 /* OBJECTION */
-.fw-ob{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;pointer-events:none;background:rgba(200,40,40,.15)}
+.fw-ob{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:12%;z-index:50;pointer-events:none;background:radial-gradient(ellipse at 50% 30%,rgba(200,40,40,.2),transparent 70%)}
 .fw-ot{font-family:'Cinzel',serif;font-size:clamp(36px,10vw,72px);font-weight:900;color:#e85555;text-shadow:0 0 50px rgba(232,85,85,.9),4px 4px 0 #8b1a1a,-2px -2px 0 #ff8888;letter-spacing:8px;animation:os .5s ease-out forwards}
 @keyframes os{0%{transform:scale(4) rotate(-8deg);opacity:0}15%{transform:scale(1.15) rotate(2deg);opacity:1}35%{transform:scale(.93) rotate(-1deg)}55%{transform:scale(1.04)}100%{transform:scale(1) rotate(0);opacity:1}}
 .fw-sk{animation:sk .4s ease-out}
@@ -1147,8 +1153,8 @@ export default function FallacyWright({ ttsEnabled = false }) {
   const bg = BG[sc?.bg]||BG.courtroom;
 
   const toggleMusic = () => {
-    if (musicOn) { AudioEngine.stopMusic(); setMusicOn(false); }
-    else { AudioEngine.startMusic(); setMusicOn(true); }
+    if (musicOn) { AudioEngine.stopMusic(); AudioEngine.mute(); setMusicOn(false); }
+    else { AudioEngine.unmute(); AudioEngine.startMusic(); setMusicOn(true); }
   };
   const toggleVoice = () => {
     const now = VoiceManager.toggle();
@@ -1159,11 +1165,11 @@ export default function FallacyWright({ ttsEnabled = false }) {
 
   // Title screen
   if(!started) return(<><style>{css}</style><div className="fw"><div className="fw-ts">
-    <button className="fw-mt" onClick={toggleMusic}>{musicOn?"🔊":"🔇"} Music</button>
+    <button className="fw-mt" onClick={toggleMusic}>{musicOn?"🔊":"🔇"} Sound</button>
     <button className="fw-mt" style={{top:8,right:100}} onClick={toggleVoice}>{voiceOn?"🗣":"🤐"} Voice</button>
     <div className="fw-gv">⚖️</div><div className="fw-tl">FALLACY WRIGHT</div>
     <div className="fw-tsub">Ace Logician</div><div className="fw-tc">"The Case of the Colossal Duck"</div>
-    <button className="fw-sb" onClick={()=>{setStarted(true);AudioEngine.titleStart();if(!musicOn){AudioEngine.startMusic();setMusicOn(true);}}}>Begin Trial</button>
+    <button className="fw-sb" onClick={()=>{setStarted(true);if(!AudioEngine.muted){AudioEngine.titleStart();if(!musicOn){AudioEngine.startMusic();setMusicOn(true);}}}}>Begin Trial</button>
     {ttsStatus&&<div style={{position:"absolute",bottom:16,left:0,right:0,textAlign:"center",fontSize:11,color:"#aaa",opacity:0.7}}>{ttsStatus}</div>}
   </div></div></>);
 
@@ -1180,7 +1186,7 @@ export default function FallacyWright({ ttsEnabled = false }) {
       <div className="fw-hd">
         <span className="fw-ht">Fallacy Wright</span>
         <span style={{display:"flex",gap:8,alignItems:"center"}}>
-          <button className="fw-mt" style={{position:"static",fontSize:13,padding:"2px 6px"}} onClick={toggleMusic} title="Music">{musicOn?"🔊":"🔇"}</button>
+          <button className="fw-mt" style={{position:"static",fontSize:13,padding:"2px 6px"}} onClick={toggleMusic} title="Sound">{musicOn?"🔊":"🔇"}</button>
           <button className="fw-mt" style={{position:"static",fontSize:13,padding:"2px 6px"}} onClick={toggleVoice} title="Voice">{voiceOn?"🗣":"🤐"}</button>
           <span className="fw-hs">⚖️ {score}/{ans}</span>
         </span>
@@ -1191,6 +1197,11 @@ export default function FallacyWright({ ttsEnabled = false }) {
 
         {/* OBJECTION overlay */}
         {objection&&<div className="fw-ob"><div className="fw-ot">OBJECTION!</div></div>}
+
+        {/* WRIGHT OBJECTION PORTRAIT — actual sprite */}
+        {objection&&(
+          <div className="fw-ch obj"><img src="/wright-objection.png" alt="OBJECTION!" style={{width:"100%",height:"auto",imageRendering:"pixelated"}} /></div>
+        )}
 
         {/* QUESTION overlay */}
         {phase==="question"&&sc?.type==="question"&&!objection&&(
