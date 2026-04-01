@@ -26,12 +26,35 @@ const AudioEngine = (() => {
     mute: () => { _muted = true; },
     unmute: () => { _muted = false; },
     textBlip: () => playNote(600 + Math.random() * 200, 0.04, "square", 0.03),
-    objection: () => {
-      // Dramatic rising chord
-      [440,554,659,880].forEach((f,i) => playNote(f, 0.5, "sawtooth", 0.12, i*0.05));
-      // Impact hit
-      playNote(120, 0.3, "square", 0.15, 0.15);
-      playNote(80, 0.2, "sawtooth", 0.1, 0.2);
+    // Preloaded objection MP3 buffer
+    _objBuffer: null,
+    _loadingObj: false,
+    _preloadObjection: async function() {
+      if (this._objBuffer || this._loadingObj) return;
+      this._loadingObj = true;
+      try {
+        const c = getCtx();
+        const resp = await fetch('/objection.mp3');
+        const arr = await resp.arrayBuffer();
+        this._objBuffer = await c.decodeAudioData(arr);
+      } catch(e) { console.warn('Objection MP3 load failed:', e); }
+      this._loadingObj = false;
+    },
+    objection: function() {
+      if (_muted) return;
+      const c = getCtx();
+      if (c.state === 'suspended') c.resume();
+      if (this._objBuffer) {
+        const src = c.createBufferSource();
+        src.buffer = this._objBuffer;
+        const g = c.createGain();
+        g.gain.value = 0.8;
+        src.connect(g); g.connect(c.destination);
+        src.start(0);
+      } else {
+        // Fallback: try HTML Audio while buffer loads
+        try { const a = new Audio('/objection.mp3'); a.volume = 0.8; a.play(); } catch(e) {}
+      }
     },
     correct: () => {
       [523,659,784,1047].forEach((f,i) => playNote(f, 0.2, "square", 0.06, i*0.1));
@@ -1108,7 +1131,7 @@ export default function FallacyWright({ ttsEnabled = false }) {
   const shake = () => { setShaking(true); setTimeout(()=>setShaking(false),400); };
   const doObj = (cb) => {
     setObjection(true); shake(); AudioEngine.objection();
-    setTimeout(()=>{setObjection(false);AudioEngine.correct();cb?.();},1400);
+    setTimeout(()=>{setObjection(false);AudioEngine.correct();cb?.();},2000);
   };
 
   const next = useCallback(() => {
@@ -1169,7 +1192,7 @@ export default function FallacyWright({ ttsEnabled = false }) {
     <button className="fw-mt" style={{top:8,right:100}} onClick={toggleVoice}>{voiceOn?"🗣":"🤐"} Voice</button>
     <div className="fw-gv">⚖️</div><div className="fw-tl">FALLACY WRIGHT</div>
     <div className="fw-tsub">Ace Logician</div><div className="fw-tc">"The Case of the Colossal Duck"</div>
-    <button className="fw-sb" onClick={()=>{setStarted(true);if(!AudioEngine.muted){AudioEngine.titleStart();if(!musicOn){AudioEngine.startMusic();setMusicOn(true);}}}}>Begin Trial</button>
+    <button className="fw-sb" onClick={()=>{setStarted(true);AudioEngine._preloadObjection();if(!AudioEngine.muted){AudioEngine.titleStart();if(!musicOn){AudioEngine.startMusic();setMusicOn(true);}}}}>Begin Trial</button>
     {ttsStatus&&<div style={{position:"absolute",bottom:16,left:0,right:0,textAlign:"center",fontSize:11,color:"#aaa",opacity:0.7}}>{ttsStatus}</div>}
   </div></div></>);
 
