@@ -985,6 +985,8 @@ const css = `@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@7
 .fw-tc{font-size:clamp(14px,2.5vw,20px);color:#c0b89a;font-style:italic;margin-top:24px}
 .fw-sb{margin-top:48px;padding:14px 48px;font-family:'Cinzel',serif;font-size:16px;font-weight:700;letter-spacing:3px;color:#0a0a14;background:#e8b84a;border:none;cursor:pointer;text-transform:uppercase;transition:all .2s;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
 .fw-sb:hover{background:#f0cc6a;transform:scale(1.05)}
+.fw-sb2{margin-top:0;padding:10px 36px;font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:2px;color:#8a8aaa;background:transparent;border:1px solid #8a8aaa44;cursor:pointer;text-transform:uppercase;transition:all .2s;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.fw-sb2:hover{color:#e8b84a;border-color:#e8b84a44;transform:scale(1.05)}
 .fw-gv{font-size:72px;margin-bottom:16px;animation:gb 2s ease-in-out infinite}
 @keyframes tp{0%,100%{text-shadow:0 0 30px rgba(232,184,74,.4),0 4px 0 #8b6914}50%{text-shadow:0 0 50px rgba(232,184,74,.7),0 4px 0 #8b6914}}
 @keyframes gb{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
@@ -1076,6 +1078,14 @@ const useTypewriter = (text, speed = 18, active = true, onTick, onStart, onDone)
    MAIN COMPONENT
    ═══════════════════════════════════════════ */
 export default function FallacyWright({ ttsEnabled = false }) {
+  // ── Save/Load helpers ──
+  const SAVE_KEY = 'fallacy-wright-save';
+  const loadSave = () => { try { const s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch(e) { return null; } };
+  const writeSave = (data) => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch(e) {} };
+  const clearSave = () => { try { localStorage.removeItem(SAVE_KEY); } catch(e) {} };
+
+  const saved = loadSave();
+
   const [started, setStarted] = useState(false);
   const [si, setSi] = useState(0);
   const [li, setLi] = useState(0);
@@ -1091,7 +1101,16 @@ export default function FallacyWright({ ttsEnabled = false }) {
   const [cli, setCli] = useState(0);
   const [musicOn, setMusicOn] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
-  const [ttsStatus, setTtsStatus] = useState(""); // loading progress message
+  const [ttsStatus, setTtsStatus] = useState("");
+
+  // ── Auto-save on progress ──
+  useEffect(() => {
+    if (started && !over) {
+      writeSave({ si, li, score, ans });
+    }
+  }, [si, li, score, ans, started, over]);
+
+  const hasSave = !!saved && saved.si > 0;
 
   // Load TTS engine once on mount
   useEffect(() => {
@@ -1136,7 +1155,7 @@ export default function FallacyWright({ ttsEnabled = false }) {
 
   const next = useCallback(() => {
     VoiceManager.stop();
-    const n=si+1; if(n>=D.length){setOver(true);AudioEngine.victory();return;}
+    const n=si+1; if(n>=D.length){setOver(true);clearSave();AudioEngine.victory();return;}
     setSi(n);setLi(0);setSel(null);setFb(null);setCLines([]);setCli(0);
     const nxt=D[n];
     if(nxt.type==="question") setPhase("question");
@@ -1184,7 +1203,20 @@ export default function FallacyWright({ ttsEnabled = false }) {
     setVoiceOn(now);
   };
 
-  const restart = () => {setSi(0);setLi(0);setPhase("text");setSel(null);setFb(null);setScore(0);setAns(0);setOver(false);setCLines([]);setCli(0);};
+  const restart = () => {clearSave();setSi(0);setLi(0);setPhase("text");setSel(null);setFb(null);setScore(0);setAns(0);setOver(false);setCLines([]);setCli(0);};
+
+  const startGame = (resume) => {
+    AudioEngine._preloadObjection();
+    if (resume && saved) {
+      setSi(saved.si); setLi(saved.li||0); setScore(saved.score||0); setAns(saved.ans||0);
+      const sc = D[saved.si];
+      setPhase(sc?.type==="question"?"question":"text");
+    } else {
+      clearSave(); setSi(0); setLi(0); setScore(0); setAns(0); setPhase("text");
+    }
+    setSel(null); setFb(null); setCLines([]); setCli(0); setOver(false); setStarted(true);
+    if(!AudioEngine.muted){AudioEngine.titleStart();if(!musicOn){AudioEngine.startMusic();setMusicOn(true);}}
+  };
 
   // Title screen
   if(!started) return(<><style>{css}</style><div className="fw"><div className="fw-ts">
@@ -1192,7 +1224,11 @@ export default function FallacyWright({ ttsEnabled = false }) {
     <button className="fw-mt" style={{top:8,right:100}} onClick={toggleVoice}>{voiceOn?"🗣":"🤐"} Voice</button>
     <div className="fw-gv">⚖️</div><div className="fw-tl">FALLACY WRIGHT</div>
     <div className="fw-tsub">Ace Logician</div><div className="fw-tc">"The Case of the Colossal Duck"</div>
-    <button className="fw-sb" onClick={()=>{setStarted(true);AudioEngine._preloadObjection();if(!AudioEngine.muted){AudioEngine.titleStart();if(!musicOn){AudioEngine.startMusic();setMusicOn(true);}}}}>Begin Trial</button>
+    <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:48,alignItems:"center"}}>
+      {hasSave && <button className="fw-sb" onClick={()=>startGame(true)}>Continue Trial</button>}
+      {hasSave && <div style={{fontSize:12,color:"#8a8aaa",marginTop:-4}}>Progress: {saved.ans||0} questions answered, {saved.score||0} correct</div>}
+      <button className={hasSave?"fw-sb2":"fw-sb"} onClick={()=>startGame(false)}>{hasSave?"Start Over":"Begin Trial"}</button>
+    </div>
     {ttsStatus&&<div style={{position:"absolute",bottom:16,left:0,right:0,textAlign:"center",fontSize:11,color:"#aaa",opacity:0.7}}>{ttsStatus}</div>}
   </div></div></>);
 
