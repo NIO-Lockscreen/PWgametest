@@ -681,7 +681,7 @@ const CustomImg = ({src}) => <img src={src} alt="" />;
 
 const BAKED_PORTRAITS = {
   "WRIGHT:normal": "/chars/wright-normal.png",
-  "WRIGHT:thinking": "/chars/wright-thinking.gif",
+  "WRIGHT:thinking": "/chars/wright-thinking.png",
   "FALLACIOUS:normal": "/chars/fallacious-normal.png",
   "FALLACIOUS:sweating": "/chars/fallacious-sweating.png",
   "JUDGE:normal": "/chars/judge-normal.png",
