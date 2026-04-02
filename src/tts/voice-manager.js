@@ -33,12 +33,21 @@ function cleanTextForSpeech(text) {
 function pickBestVoice() {
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
-  // Prefer: en-US > en-GB > any English > first available
+  
+  // Known male voice name fragments across platforms
+  const maleNames = ['david', 'james', 'daniel', 'alex', 'mark', 'guy', 'thomas', 'male', 'reed', 'aaron', 'gordon', 'rishi'];
+  const isMale = (v) => maleNames.some(m => v.name.toLowerCase().includes(m));
+  const isEn = (v) => v.lang.startsWith('en');
+  
+  // Prefer: male en-US > male en > any en-US > any en > first
   return (
+    voices.find(v => v.lang === 'en-US' && isMale(v) && v.localService) ||
+    voices.find(v => v.lang === 'en-US' && isMale(v)) ||
+    voices.find(v => isEn(v) && isMale(v)) ||
     voices.find(v => v.lang === 'en-US' && v.localService) ||
     voices.find(v => v.lang === 'en-US') ||
     voices.find(v => v.lang === 'en-GB') ||
-    voices.find(v => v.lang.startsWith('en')) ||
+    voices.find(v => isEn(v)) ||
     voices[0]
   );
 }
