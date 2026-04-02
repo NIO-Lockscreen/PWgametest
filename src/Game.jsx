@@ -1085,7 +1085,7 @@ const D = [
    ═══════════════════════════════════════════ */
 const css = `@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 .fw{font-family:'Crimson Text',Georgia,serif;background:#0a0a14;color:#e0ddd5;width:100%;height:100vh;display:flex;flex-direction:column;overflow:hidden;position:relative;user-select:none}
-.fw-ts{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 60%,#1a1028,#0a0a14 70%);z-index:100}
+.fw-ts{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 60%,#1a1028,#0a0a14 70%);z-index:100;overflow-y:auto;padding:20px 0}
 .fw-tl{font-family:'Cinzel',serif;font-size:clamp(28px,7vw,52px);font-weight:900;color:#e8b84a;text-shadow:0 0 30px rgba(232,184,74,.4),0 4px 0 #8b6914;letter-spacing:3px;text-align:center;animation:tp 3s ease-in-out infinite}
 .fw-tsub{font-family:'Cinzel',serif;font-size:clamp(12px,2.5vw,18px);color:#8a8aaa;letter-spacing:6px;margin-top:8px;text-transform:uppercase}
 .fw-tc{font-size:clamp(14px,2.5vw,20px);color:#c0b89a;font-style:italic;margin-top:24px}
@@ -1210,6 +1210,8 @@ export default function FallacyWright({ ttsEnabled = false }) {
   const [musicOn, setMusicOn] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
   const [ttsStatus, setTtsStatus] = useState("");
+  const [charScale, setCharScale] = useState(() => { try { return parseFloat(localStorage.getItem('fw-char-scale'))||1; } catch(e) { return 1; } });
+  const cycleScale = () => { const next = charScale===1?1.5:charScale===1.5?2:1; setCharScale(next); try{localStorage.setItem('fw-char-scale',next);}catch(e){} };
 
   // ── Auto-save on progress ──
   useEffect(() => {
@@ -1353,12 +1355,14 @@ export default function FallacyWright({ ttsEnabled = false }) {
     <button className="fw-mt" style={{top:8,right:100}} onClick={toggleVoice}>{voiceOn?"🗣":"🤐"} Voice</button>
     <div className="fw-gv">⚖️</div><div className="fw-tl">FALLACY WRIGHT</div>
     <div className="fw-tsub">Ace Logician</div><div className="fw-tc">"The Case of the Colossal Duck"</div>
-    <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:48,alignItems:"center"}}>
+    <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:32,alignItems:"center"}}>
       {hasSave && <button className="fw-sb" onClick={()=>startGame(true)}>Continue Trial</button>}
       {hasSave && <div style={{fontSize:12,color:"#8a8aaa",marginTop:-4}}>Progress: {saved.ans||0} questions answered, {saved.score||0} correct</div>}
       <button className={hasSave?"fw-sb2":"fw-sb"} onClick={()=>startGame(false)}>{hasSave?"Start Over":"Begin Trial"}</button>
       <button className="fw-sb2" style={{marginTop:8}} onClick={()=>setShowImport(true)}>
         🎨 Import Custom Characters{Object.keys(customPortraits).length>0?` (${Object.keys(customPortraits).length})`:""}</button>
+      <button className="fw-sb2" onClick={cycleScale}>
+        📐 Character Size: {charScale===1?"Normal":charScale===1.5?"+50% Larger":"+100% Larger"}</button>
     </div>
     {showImport && <CharacterImportModal onClose={()=>setShowImport(false)} customPortraits={customPortraits} setCustomPortraits={setCustomPortraits} />}
     {ttsStatus&&<div style={{position:"absolute",bottom:16,left:0,right:0,textAlign:"center",fontSize:11,color:"#aaa",opacity:0.7}}>{ttsStatus}</div>}
@@ -1412,7 +1416,7 @@ export default function FallacyWright({ ttsEnabled = false }) {
 
         {/* SINGLE LARGE CHARACTER PORTRAIT */}
         {(phase==="text"||phase==="correct-scene")&&!objection&&activeSpeaker&&(
-          <div className={`fw-ch ${objection?"obj":""}`}>{renderPortrait(activeSpeaker,charEx)}</div>
+          <div className={`fw-ch ${objection?"obj":""}`} style={charScale!==1?{height:`calc(clamp(220px,48vh,400px) * ${charScale})`}:{}}>{renderPortrait(activeSpeaker,charEx)}</div>
         )}
 
         {/* DIALOGUE BOX — during objection, show Wright's objection text */}
