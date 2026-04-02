@@ -677,7 +677,21 @@ const slotId = (key, expr) => `${key}:${expr}`;
 const loadCustom = (key, expr) => { try { return localStorage.getItem(CUSTOM_PREFIX + slotId(key,expr)); } catch(e) { return null; } };
 const saveCustom = (key, expr, dataUrl) => { try { localStorage.setItem(CUSTOM_PREFIX + slotId(key,expr), dataUrl); } catch(e) {} };
 const removeCustom = (key, expr) => { try { localStorage.removeItem(CUSTOM_PREFIX + slotId(key,expr)); } catch(e) {} };
-const CustomImg = ({src}) => <img src={src} alt="" style={{height:"100%",width:"auto",objectFit:"contain",objectPosition:"center bottom",display:"block"}} />;
+const CustomImg = ({src}) => <img src={src} alt="" />;
+
+const BAKED_PORTRAITS = {
+  "WRIGHT:normal": "/chars/wright-normal.png",
+  "WRIGHT:thinking": "/chars/wright-thinking.png",
+  "FALLACIOUS:normal": "/chars/fallacious-normal.png",
+  "FALLACIOUS:sweating": "/chars/fallacious-sweating.png",
+  "JUDGE:normal": "/chars/judge-normal.png",
+  "LARRY:normal": "/chars/larry-normal.png",
+  "BRENDA:normal": "/chars/brenda-normal.png",
+  "CHAD:normal": "/chars/chad-normal.png",
+  "LOOPSWORTH:normal": "/chars/loopsworth-normal.png",
+  "WILLOW:normal": "/chars/willow-normal.png",
+  "DR. VON STUFFINGTON:normal": "/chars/vonstuffington-normal.png",
+};
 
 const CharacterImportModal = ({ onClose, customPortraits, setCustomPortraits }) => {
   const fileRef = useRef(null);
@@ -720,8 +734,10 @@ const CharacterImportModal = ({ onClose, customPortraits, setCustomPortraits }) 
               {/* Preview */}
               <div style={{width:60,height:80,background:"#0a0a18",borderRadius:4,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",border:"1px solid #222"}}>
                 {custom
-                  ? <img src={custom} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}} />
-                  : <div style={{width:50,height:70}}>{(P[slot.key]||P["???"])(slot.expr)}</div>
+                  ? <img src={custom} alt="" style={{height:"100%",width:"auto",objectFit:"contain"}} />
+                  : BAKED_PORTRAITS[id]
+                    ? <img src={BAKED_PORTRAITS[id]} alt="" style={{height:"100%",width:"auto",objectFit:"contain"}} />
+                    : <div style={{width:50,height:70}}>{(P[slot.key]||P["???"])(slot.expr)}</div>
                 }
               </div>
               {/* Info + buttons */}
@@ -1088,9 +1104,10 @@ const css = `@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@7
 .fw-sc{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column}
 .fw-bg{position:absolute;inset:0;opacity:.45}
 /* SINGLE LARGE PORTRAIT — PW style */
-.fw-ch{position:absolute;bottom:130px;left:50%;transform:translateX(-50%);z-index:5;height:clamp(200px,50vh,380px);width:auto;transition:all .3s ease;filter:drop-shadow(0 8px 24px rgba(0,0,0,.6));display:flex;align-items:flex-end}
-.fw-ch svg{height:100%;width:auto}
+.fw-ch{position:absolute;bottom:130px;left:50%;transform:translateX(-50%);z-index:5;height:clamp(220px,48vh,400px);filter:drop-shadow(0 8px 24px rgba(0,0,0,.6));transition:all .3s ease}
+.fw-ch svg,.fw-ch img{height:100%;width:auto;display:block}
 .fw-ch.obj{animation:portraitSlam .4s ease-out;z-index:8;bottom:-10px;left:5%;height:auto;transform:translateX(0);width:clamp(280px,60vw,720px);filter:drop-shadow(0 12px 40px rgba(0,0,0,.8))}
+.fw-ch.obj img{width:100%;height:auto}
 @keyframes portraitSlam{0%{transform:scale(1.15);opacity:0.7}40%{transform:scale(.97);opacity:1}100%{transform:scale(1)}}
 /* DIALOGUE BOX — PW style bottom panel */
 .fw-dl{position:absolute;bottom:0;left:0;right:0;z-index:10;background:linear-gradient(180deg,rgba(10,10,20,.95),rgba(5,5,12,.98));border-top:3px solid #e8b84a;min-height:130px;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-start}
@@ -1193,6 +1210,8 @@ export default function FallacyWright({ ttsEnabled = false }) {
   const [musicOn, setMusicOn] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
   const [ttsStatus, setTtsStatus] = useState("");
+  const [charScale, setCharScale] = useState(() => { try { return parseFloat(localStorage.getItem('fw-char-scale'))||1; } catch(e) { return 1; } });
+  const cycleScale = () => { const next = charScale===1?1.5:charScale===1.5?2:1; setCharScale(next); try{localStorage.setItem('fw-char-scale',next);}catch(e){} };
 
   // ── Auto-save on progress ──
   useEffect(() => {
@@ -1214,10 +1233,13 @@ export default function FallacyWright({ ttsEnabled = false }) {
   });
   const [showImport, setShowImport] = useState(false);
 
-  // Custom-aware portrait renderer
+  // Custom-aware portrait renderer — checks: custom upload → baked-in image → SVG
   const renderPortrait = (charKey, expr) => {
-    const custom = customPortraits[slotId(charKey, expr)];
-    if (custom) return <CustomImg src={custom} />;
+    const id = slotId(charKey, expr);
+    const custom = customPortraits[id];
+    if (custom) return <img src={custom} alt="" />;
+    const baked = BAKED_PORTRAITS[id];
+    if (baked) return <img src={baked} alt="" />;
     return portrait(charKey, expr);
   };
 
@@ -1339,6 +1361,8 @@ export default function FallacyWright({ ttsEnabled = false }) {
       <button className={hasSave?"fw-sb2":"fw-sb"} onClick={()=>startGame(false)}>{hasSave?"Start Over":"Begin Trial"}</button>
       <button className="fw-sb2" style={{marginTop:8}} onClick={()=>setShowImport(true)}>
         🎨 Import Custom Characters{Object.keys(customPortraits).length>0?` (${Object.keys(customPortraits).length})`:""}</button>
+      <button className="fw-sb2" onClick={cycleScale}>
+        📐 Character Size: {charScale===1?"Normal":charScale===1.5?"+50% Larger":"+100% Larger"}</button>
     </div>
     {showImport && <CharacterImportModal onClose={()=>setShowImport(false)} customPortraits={customPortraits} setCustomPortraits={setCustomPortraits} />}
     {ttsStatus&&<div style={{position:"absolute",bottom:16,left:0,right:0,textAlign:"center",fontSize:11,color:"#aaa",opacity:0.7}}>{ttsStatus}</div>}
@@ -1392,7 +1416,7 @@ export default function FallacyWright({ ttsEnabled = false }) {
 
         {/* SINGLE LARGE CHARACTER PORTRAIT */}
         {(phase==="text"||phase==="correct-scene")&&!objection&&activeSpeaker&&(
-          <div className={`fw-ch ${objection?"obj":""}`}>{renderPortrait(activeSpeaker,charEx)}</div>
+          <div className={`fw-ch ${objection?"obj":""}`} style={charScale!==1?{height:`calc(clamp(220px,48vh,400px) * ${charScale})`}:{}}>{renderPortrait(activeSpeaker,charEx)}</div>
         )}
 
         {/* DIALOGUE BOX — during objection, show Wright's objection text */}
