@@ -679,6 +679,20 @@ const saveCustom = (key, expr, dataUrl) => { try { localStorage.setItem(CUSTOM_P
 const removeCustom = (key, expr) => { try { localStorage.removeItem(CUSTOM_PREFIX + slotId(key,expr)); } catch(e) {} };
 const CustomImg = ({src}) => <img src={src} alt="" />;
 
+const BAKED_PORTRAITS = {
+  "WRIGHT:normal": "/chars/wright-normal.png",
+  "WRIGHT:thinking": "/chars/wright-thinking.gif",
+  "FALLACIOUS:normal": "/chars/fallacious-normal.png",
+  "FALLACIOUS:sweating": "/chars/fallacious-sweating.png",
+  "JUDGE:normal": "/chars/judge-normal.png",
+  "LARRY:normal": "/chars/larry-normal.png",
+  "BRENDA:normal": "/chars/brenda-normal.png",
+  "CHAD:normal": "/chars/chad-normal.png",
+  "LOOPSWORTH:normal": "/chars/loopsworth-normal.png",
+  "WILLOW:normal": "/chars/willow-normal.png",
+  "DR. VON STUFFINGTON:normal": "/chars/vonstuffington-normal.png",
+};
+
 const CharacterImportModal = ({ onClose, customPortraits, setCustomPortraits }) => {
   const fileRef = useRef(null);
   const [activeSlot, setActiveSlot] = useState(null);
@@ -720,8 +734,10 @@ const CharacterImportModal = ({ onClose, customPortraits, setCustomPortraits }) 
               {/* Preview */}
               <div style={{width:60,height:80,background:"#0a0a18",borderRadius:4,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",border:"1px solid #222"}}>
                 {custom
-                  ? <img src={custom} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}} />
-                  : <div style={{width:50,height:70}}>{(P[slot.key]||P["???"])(slot.expr)}</div>
+                  ? <img src={custom} alt="" style={{height:"100%",width:"auto",objectFit:"contain"}} />
+                  : BAKED_PORTRAITS[id]
+                    ? <img src={BAKED_PORTRAITS[id]} alt="" style={{height:"100%",width:"auto",objectFit:"contain"}} />
+                    : <div style={{width:50,height:70}}>{(P[slot.key]||P["???"])(slot.expr)}</div>
                 }
               </div>
               {/* Info + buttons */}
@@ -1215,10 +1231,13 @@ export default function FallacyWright({ ttsEnabled = false }) {
   });
   const [showImport, setShowImport] = useState(false);
 
-  // Custom-aware portrait renderer
+  // Custom-aware portrait renderer — checks: custom upload → baked-in image → SVG
   const renderPortrait = (charKey, expr) => {
-    const custom = customPortraits[slotId(charKey, expr)];
-    if (custom) return <CustomImg src={custom} />;
+    const id = slotId(charKey, expr);
+    const custom = customPortraits[id];
+    if (custom) return <img src={custom} alt="" />;
+    const baked = BAKED_PORTRAITS[id];
+    if (baked) return <img src={baked} alt="" />;
     return portrait(charKey, expr);
   };
 
